@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,24 +23,53 @@ import com.squareup.picasso.Picasso;
 public class AudioAdapter extends CursorRecyclerViewAdapter{
 
 
-    public AudioAdapter(Context context, Cursor cursor) {
+    int type;
+
+    public AudioAdapter(Context context, Cursor cursor, int type) {
         super(context, cursor);
+        this.type = type;
     }
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, Cursor cursor) {
+        System.out.println("onBindViewHolder()");
         AudioItem audioItem = AudioItem.bindCursor(cursor);
         ((AudioViewHolder) viewHolder).setAudioItem(audioItem, cursor.getPosition());
     }
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.listitem_audio_card, parent, false);
+
+        System.out.println("onCreateViewHolder()");
+        View v;
+        if(viewType == 1) {
+            v = LayoutInflater.from(parent.getContext()).inflate(R.layout.listitem_audio_card, parent, false);
+        } else {
+            v = LayoutInflater.from(parent.getContext()).inflate(R.layout.listitem_audio, parent, false);
+        }
+
+        Log.e("onCreateViewHolder","view type : " + viewType);
+
         return new AudioViewHolder(v);
+    }
+
+    @Override
+    public int getItemViewType(int position){
+        System.out.println("getItemViewType()");
+
+
+        if(type == 0) {
+            return 0;
+        } else {
+            return 1;
+        }
+
+        //임시로 2 리턴
     }
 
 
     public static class AudioItem {
+
 
         public long mId; // 오디오 고유 ID
         public long mAlbumId; // 오디오 앨범아트 ID
@@ -50,6 +80,9 @@ public class AudioAdapter extends CursorRecyclerViewAdapter{
         public String mDataPath; // 실제 데이터위치
 
         public static AudioItem bindCursor(Cursor cursor) {
+
+            System.out.println("bindCursor()");
+
             AudioItem audioItem = new AudioItem();
             audioItem.mId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.AudioColumns._ID));
             audioItem.mAlbumId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.AudioColumns.ALBUM_ID));
@@ -76,6 +109,8 @@ public class AudioAdapter extends CursorRecyclerViewAdapter{
         private int mPosition;
 
         private AudioViewHolder(View view) {
+
+
             super(view);
             mImgAlbumArt = (ImageView) view.findViewById(R.id.img_albumart);
             mTxtTitle = (TextView) view.findViewById(R.id.txt_title);
@@ -92,6 +127,9 @@ public class AudioAdapter extends CursorRecyclerViewAdapter{
         }
 
         public void setAudioItem(AudioItem item, int position) {
+
+            System.out.println("setAudioItem()");
+
             mItem = item;
             mPosition = position;
             mTxtTitle.setText(item.mTitle);
@@ -102,5 +140,6 @@ public class AudioAdapter extends CursorRecyclerViewAdapter{
             Uri albumArtUri = ContentUris.withAppendedId(artworkUri, item.mAlbumId);
             Picasso.with(itemView.getContext()).load(albumArtUri).error(R.mipmap.ic_empty_albumart).into(mImgAlbumArt);
         }
+
     }
 }
