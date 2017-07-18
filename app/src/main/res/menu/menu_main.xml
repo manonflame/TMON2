@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.kyungjunmin.tmon.MainActivity">
+
+
+    <item
+        android:id="@+id/action_viewChange"
+        android:orderInCategory="100"
+        app:showAsAction="always"
+        android:title="viewChange"
+        android:icon="@drawable/ic_view_change"
+        />
+
+    <item
+        android:id="@+id/action_search"
+        android:orderInCategory="100"
+        android:title="@string/action_settings"
+        android:icon="@drawable/ic_search"
+        app:actionViewClass="android.support.v7.widget.SearchView"
+        app:showAsAction="always" />
+
+</menu>
