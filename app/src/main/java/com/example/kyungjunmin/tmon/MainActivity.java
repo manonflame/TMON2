@@ -24,10 +24,17 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.LinearLayout;
+
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
 
 public class MainActivity extends AppCompatActivity {
     private final static int LOADER_ID = 0x001;
@@ -35,6 +42,17 @@ public class MainActivity extends AppCompatActivity {
     private Menu menu;
 
     boolean CardViewState = true;
+
+
+    //슬라이딩레이아웃
+    private SlidingUpPanelLayout mLayout;
+
+    //슬라이드가 밑에 있을 때의 플레이 버튼
+    public Button slidePlay;
+
+    //슬라이드가 올라왔을 때의 옵션과 리스트 표시 버튼
+    public Button slideOption;
+    public Button slideList;
 
 
 
@@ -69,6 +87,19 @@ public class MainActivity extends AppCompatActivity {
             list = loadMusic.getMusicList();
         }
 
+
+
+        //버튼들 연결
+        slidePlay = (Button)findViewById(R.id.slide_play);
+        slideOption = (Button)findViewById(R.id.slide_openned_option);
+        slideList = (Button)findViewById(R.id.go_to_list);
+
+
+
+
+
+
+        //리사이클러 뷰 초기에 띄우기
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         mAdapter = new myAdapter(list, 1, this);
         mRecyclerView.setAdapter(mAdapter);
@@ -76,8 +107,56 @@ public class MainActivity extends AppCompatActivity {
         layoutManager = new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(layoutManager);
 
+
+
+        mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_layout);
+        mLayout.addPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
+            @Override
+            public void onPanelSlide(View panel, float slideOffset) {
+                Log.d(TAG, "onPanelSlide, offset " + slideOffset);
+            }
+
+            @Override
+            public void onPanelStateChanged(View panel, SlidingUpPanelLayout.PanelState previousState, SlidingUpPanelLayout.PanelState newState) {
+                Log.d(TAG, "onPanelStateChanged " + newState);
+
+                if(newState == SlidingUpPanelLayout.PanelState.EXPANDED){
+                    slidePlay.setVisibility(GONE);
+                    slideOption.setVisibility(VISIBLE);
+                    slideList.setVisibility(VISIBLE);
+                }
+                else{
+                    slidePlay.setVisibility(VISIBLE);
+                    slideOption.setVisibility(GONE);
+                    slideList.setVisibility(GONE);
+                }
+
+            }
+        });
+        mLayout.setFadeOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mLayout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+
+            }
+        });
+
+
+
+
     }
 
+
+
+
+
+
+
+
+
+
+
+    //메뉴바 관련 함수들
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
