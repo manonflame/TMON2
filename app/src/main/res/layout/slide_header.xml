@@ -62,12 +62,10 @@
         <Button
             android:id="@+id/go_to_list"
             android:background="@mipmap/ic_list_off"
-            android:layout_marginRight="5dp"
             android:layout_width="60dp"
             android:layout_height="60dp"
             android:layout_toLeftOf="@+id/slide_openned_option"
             android:visibility="gone"/>
-
     </RelativeLayout>
 
 
