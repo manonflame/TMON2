@@ -2,7 +2,9 @@ package com.example.kyungjunmin.tmon;
 
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -12,18 +14,26 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
+import io.realm.Realm;
+import io.realm.RealmConfiguration;
+import io.realm.RealmObject;
+import io.realm.RealmResults;
+
 /**
  * Created by KyungJunMin on 2017. 7. 18..
  */
 
-public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder> {
+public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
 
+    Realm realm;
+    private RealmResults<AudioItem> mDataset;
 
     Context context;
     private final Uri artworkUri = Uri.parse("content://media/external/audio/albumart");
@@ -31,13 +41,22 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder> {
     public int viewType;
 
 
+
     public myAdapter(List<AudioItem> items , int viewType, Context context){
         Log.d("myAdapter생성자 ","지금 들어온 뷰타입 - " + viewType);
         this.albumList = items;
         this.viewType = viewType;
         this.context =  context;
+        mDataset = null;
     }
 
+    public void setAlbumList(List<AudioItem> list){
+        this.albumList = list;
+    }
+
+    public void setmDataset(RealmResults<AudioItem> mDataset) {
+        this.mDataset = mDataset;
+    }
     /**
      * 레이아웃을 만들어서 Holer에 저장
      * @param viewGroup
@@ -46,6 +65,17 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder> {
      */
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
+
+
+        realm = Realm.getDefaultInstance();
+
+
+
+        //램 인덱스를 호출
+        SharedPreferences mPref = PreferenceManager.getDefaultSharedPreferences(context);
+
+
+
 
 
         View v;
@@ -72,12 +102,22 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int position) {
 
-        AudioItem item = albumList.get(position);
-        viewHolder.MusicTitle.setText(item.mTitle);
-        viewHolder.ArtisttName.setText(item.mArtist);
-        Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, item.mAlbumId);
+        final AudioItem myItem = albumList.get(position);
+        viewHolder.MusicTitle.setText(myItem.getmTitle());
+        viewHolder.ArtisttName.setText(myItem.getmArtist());
+        Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, myItem.getmAlbumId());
         Picasso.with(viewHolder.itemView.getContext()).load(albumArtUrl).error(R.mipmap.ic_empty_albumart).into(viewHolder.img);
 
+
+        //로그용**
+        final long mId = myItem.getmId();
+        final long mAlbumId = myItem.getmAlbumId();
+        final String mTitle = myItem.getmTitle();
+        final String mArtist = myItem.getmArtist();
+        final String mAlbum = myItem.getmAlbum();
+        final long mDuration = myItem.getmDuration();
+        final String mDataPath = myItem.getmDataPath();
+        //로그용**
 
         //버튼 클릭 이벤트
         viewHolder.optionButton.setOnClickListener(new View.OnClickListener(){
@@ -95,7 +135,35 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder> {
                         switch (item.getItemId()){
                             case R.id.lib_add:
                                 //램디비에 추가하면됨
+                                //로그용**
                                 Log.d("libMenuClick","램디비에 추가하면됨");
+                                Log.d("item - INDEX", String.valueOf(mDataset.size()));
+                                Log.d("item - mId", String.valueOf(mId));
+                                Log.d("item - mAlbumId",String.valueOf(mAlbumId));
+                                Log.d("item - mTitle",mTitle);
+                                Log.d("item - mArtist",mArtist);
+                                Log.d("item - mAlbum",mAlbum);
+                                Log.d("item - mDuration",String.valueOf(mDuration));
+                                Log.d("item - mDataPath",mDataPath);
+                                //로그용**
+
+
+                                final AudioItem newItem = new AudioItem();
+                                newItem.setIndex(mDataset.size());
+                                newItem.setmId(myItem.getmId());
+                                newItem.setmAlbumId(myItem.getmAlbumId());
+                                newItem.setmTitle(myItem.getmTitle());
+                                newItem.setmArtist(myItem.getmArtist());
+                                newItem.setmAlbum(myItem.getmAlbum());
+                                newItem.setmDuration(myItem.getmDuration());
+                                newItem.setmDataPath(myItem.getmDataPath());
+                                realm.executeTransaction(new Realm.Transaction() {
+                                    @Override
+                                    public void execute(Realm realm) {
+                                        realm.copyToRealmOrUpdate(newItem);
+                                        realm.copyToRealmOrUpdate(newItem);
+                                    }
+                                });
                                 break;
                             case R.id.lib_del:
                                 //라이브러리 목록에서 삭제하면 됨
@@ -141,12 +209,10 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder> {
 
         public ViewHolder(View itemView){
             super(itemView);
-
             img = (ImageView) itemView.findViewById(R.id.img_albumart);
             MusicTitle = (TextView) itemView.findViewById(R.id.txt_title);
             ArtisttName = (TextView) itemView.findViewById(R.id.artist_name);
             optionButton = (Button) itemView.findViewById(R.id.popUpButton);
         }
-
     }
 }
