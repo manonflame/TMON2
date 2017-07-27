@@ -1,8 +1,11 @@
 package com.example.kyungjunmin.tmon;
 
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
@@ -46,6 +49,13 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
     private final OnStartDragListener mDragStartListener;
     private final OnCustomerListChangedListener mListChangedListener;
 
+    public BroadcastReceiver mBCReceiver;
+
+
+    //현재 서비스에 올라있는 애
+    private int nowPosition;
+    //서비스에 올라있는애의 재생 중인지 여부
+    private boolean playing;
 
     //이거 없어도됌
     Context mContext;
@@ -57,6 +67,15 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
         mDragStartListener = dragLlistener;
         mListChangedListener = listChangedListener;
         mContext = context;
+
+
+        mBCReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                //현재 진행중인 포지션을 인텐트로 변경하고
+                //정지인지 플레이인지 확인
+            }
+        };
 
 
     }
@@ -72,7 +91,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
 
     @Override
     public ItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
+        Log.d("onCreateViewHolder", "Check");
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.playlist_item, parent, false);
         ItemViewHolder holder = new ItemViewHolder(v);
 
@@ -193,6 +212,8 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
     }
 
 
+
+
     public static class ItemViewHolder extends RecyclerView.ViewHolder implements ItemTouchHelperViewHolder {
 
         //버튼 선언
@@ -204,6 +225,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
         public final Button optionButton;
         public final LinearLayout PlayMusicByTitle;
 
+
         public ItemViewHolder(View v) {
             super(v);
             PLMusicTitle = (TextView) v.findViewById(R.id.PL_title);
@@ -212,6 +234,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
             PLDragButton = (Button) v.findViewById(R.id.PL_drag);
             optionButton = (Button) itemView.findViewById(R.id.playlist_option);
             PlayMusicByTitle = (LinearLayout) v.findViewById(R.id.playlist_play_music);
+
         }
 
 
