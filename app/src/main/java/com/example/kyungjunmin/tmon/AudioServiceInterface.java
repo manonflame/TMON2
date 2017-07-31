@@ -58,10 +58,8 @@ public class AudioServiceInterface {
 
     public boolean checkNull(){
         if (mService != null) {
-            Log.d("setPlayList in INTERFACE","NOT NULL" );
             return false;
         }else{
-            Log.d("setPlayList in INTERFACE","NULL" );
             return true;
         }
     }
@@ -108,6 +106,7 @@ public class AudioServiceInterface {
         if (isPlaying()) {
             mService.pause();
         } else {
+            Log.d("서비스 인터페이스 토글플레이 ", "플레이");
             mService.play();
         }
     }
