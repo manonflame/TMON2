@@ -6,13 +6,14 @@
     android:background="#F00"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:layout_weight="3"
+    android:weightSum="1"
     >
 
     <ImageView
+        android:id="@+id/slide_albumart"
         android:layout_marginLeft="5dp"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:src="@mipmap/ic_empty_albumart"
         android:background="#FFF"
         />
@@ -22,19 +23,24 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:layout_marginLeft="15dp"
+        android:weightSum="3"
+
         android:gravity="center_vertical">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/slide_title"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="MUSIC CONTENT"
+            android:maxWidth="170dp"
             android:textSize="20dp"/>
 
         <TextView
-            android:layout_marginTop="10dp"
-            android:layout_width="wrap_content"
+            android:id="@+id/slide_artist"
+            android:layout_width="match_parent"
             android:text="ARTIST_CONTENT"
             android:layout_height="wrap_content"
+            android:maxWidth="170dp"
             android:textSize="15dp"/>
 
     </LinearLayout>
@@ -42,7 +48,8 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center_vertical|right">
+        android:gravity="center_vertical|right"
+        >
 
         <Button
             android:id="@+id/slide_play"
@@ -50,22 +57,37 @@
             android:layout_marginRight="10dp"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            android:visibility="visible"/>
+            android:visibility="visible"
+            />
 
-        <Button
-            android:id="@+id/slide_openned_option"
-            android:background="@mipmap/ic_option"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:visibility="gone"/>
+        <LinearLayout
+            android:id="@+id/slide_up_layout"
+            android:layout_width="120dp"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical|right"
+            android:visibility="gone"
+            >
 
-        <Button
-            android:id="@+id/go_to_list"
-            android:background="@mipmap/ic_list_off"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_toLeftOf="@+id/slide_openned_option"
-            android:visibility="gone"/>
+            <Button
+                android:id="@+id/go_to_list"
+                android:background="@mipmap/ic_list_off"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_toLeftOf="@+id/slide_openned_option"
+                />
+
+            <Button
+                android:id="@+id/slide_openned_option"
+                android:background="@mipmap/ic_option"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                />
+
+
+
+        </LinearLayout>
+
     </RelativeLayout>
 
 

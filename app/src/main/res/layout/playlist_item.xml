@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="70dp"
+    android:layout_height="40dp"
     android:background="#F0F"
     android:orientation="horizontal"
     android:weightSum="1"
@@ -19,19 +19,22 @@
         >
 
         <Button
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:id="@+id/PL_drag"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="@mipmap/ic_drag_handle"
             />
         <ImageView
+            android:id="@+id/PL_albumart"
             android:layout_marginLeft="5dp"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="#505"
             android:src="@mipmap/ic_empty_albumart"
             />
         <LinearLayout
             android:layout_width="match_parent"
+            android:id="@+id/playlist_play_music"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="#FAF"
@@ -41,15 +44,17 @@
             >
 
             <TextView
+                android:id="@+id/PL_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="MUSIC_NAME"
-                android:textSize="20dp"
+                android:textSize="15dp"
                 />
             <TextView
+                android:id="@+id/PL_artist"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="15dp"
+                android:textSize="12dp"
                 android:text="artist"
                 />
 
@@ -58,9 +63,10 @@
 
 
     <Button
+        android:id="@+id/playlist_option"
         android:background="@mipmap/ic_option"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         />
 
 

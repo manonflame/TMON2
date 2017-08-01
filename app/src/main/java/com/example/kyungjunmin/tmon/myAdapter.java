@@ -2,11 +2,13 @@ package com.example.kyungjunmin.tmon;
 
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -19,12 +21,15 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmObject;
+import io.realm.RealmQuery;
 import io.realm.RealmResults;
+import io.realm.Sort;
 
 /**
  * Created by KyungJunMin on 2017. 7. 18..
@@ -41,13 +46,23 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
     public int viewType;
 
 
+    private RealmQuery<AudioItem> query;
+    private RealmResults<AudioItem> results;
+
+    int nextIndex;
+
+
+    IntentFilter filter;
+
 
     public myAdapter(List<AudioItem> items , int viewType, Context context){
-        Log.d("myAdapter생성자 ","지금 들어온 뷰타입 - " + viewType);
+        Log.e("MY ADAPTER : onCreateViewHolder","MYADAPTER CONSTRUCTOR");
         this.albumList = items;
         this.viewType = viewType;
         this.context =  context;
         mDataset = null;
+
+
     }
 
     public void setAlbumList(List<AudioItem> list){
@@ -65,31 +80,28 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
      */
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
-
-
         realm = Realm.getDefaultInstance();
-
-
-
-        //램 인덱스를 호출
-        SharedPreferences mPref = PreferenceManager.getDefaultSharedPreferences(context);
-
-
-
-
 
         View v;
         if(viewType ==1){
-            Log.d("onCreateViewHolder()","listitem_audio_card 연결");
             v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.listitem_audio_card, viewGroup, false);
         }
         else {
-            Log.d("onCreateViewHolder()","listitem_audio 연결");
             v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.listitem_audio, viewGroup, false);
         }
-        Log.d("onCreateViewHolder()","viewType ::: "+viewType);
-        return new ViewHolder(v);
 
+
+
+
+        //마지막 인덱스 받기
+        if(realm.isEmpty()){
+            //마지막 인덱스가 비었다면
+            nextIndex = 0;
+        }else{
+            //마지막 인덱스가 비지 않았다면
+            nextIndex = realm.where(AudioItem.class).max("INDEX").intValue()+1;
+        }
+        return new ViewHolder(v);
     }
 
     /**
@@ -107,8 +119,7 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
         viewHolder.ArtisttName.setText(myItem.getmArtist());
         Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, myItem.getmAlbumId());
         Picasso.with(viewHolder.itemView.getContext()).load(albumArtUrl).error(R.mipmap.ic_empty_albumart).into(viewHolder.img);
-
-
+        Log.d("MYADAPTER ONBINDVIEWHOLDER",myItem.getmTitle());
         //로그용**
         final long mId = myItem.getmId();
         final long mAlbumId = myItem.getmAlbumId();
@@ -134,37 +145,56 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
 
                         switch (item.getItemId()){
                             case R.id.lib_add:
-                                //램디비에 추가하면됨
-                                //로그용**
-                                Log.d("libMenuClick","램디비에 추가하면됨");
-                                Log.d("item - INDEX", String.valueOf(mDataset.size()));
-                                Log.d("item - mId", String.valueOf(mId));
-                                Log.d("item - mAlbumId",String.valueOf(mAlbumId));
-                                Log.d("item - mTitle",mTitle);
-                                Log.d("item - mArtist",mArtist);
-                                Log.d("item - mAlbum",mAlbum);
-                                Log.d("item - mDuration",String.valueOf(mDuration));
-                                Log.d("item - mDataPath",mDataPath);
-                                //로그용**
+
+                                //아이디로 검색해보고
+                                AudioItem existanceChecker = realm.where(AudioItem.class).equalTo("mId", mId).findFirst();
+                                if(existanceChecker == null){
+                                    //없으면 추가함
+                                    //램디비에 추가하면됨
+                                    //로그용**
+                                    Log.d("libMenuClick","램디비에 추가하면됨");
+                                    Log.d("item - INDEX", String.valueOf(nextIndex));
+                                    Log.d("item - mId", String.valueOf(mId));
+                                    Log.d("item - mAlbumId",String.valueOf(mAlbumId));
+                                    Log.d("item - mTitle",mTitle);
+                                    Log.d("item - mArtist",mArtist);
+                                    Log.d("item - mAlbum",mAlbum);
+                                    Log.d("item - mDuration",String.valueOf(mDuration));
+                                    Log.d("item - mDataPath",mDataPath);
+                                    //로그용**
 
 
-                                final AudioItem newItem = new AudioItem();
-                                newItem.setIndex(mDataset.size());
-                                newItem.setmId(myItem.getmId());
-                                newItem.setmAlbumId(myItem.getmAlbumId());
-                                newItem.setmTitle(myItem.getmTitle());
-                                newItem.setmArtist(myItem.getmArtist());
-                                newItem.setmAlbum(myItem.getmAlbum());
-                                newItem.setmDuration(myItem.getmDuration());
-                                newItem.setmDataPath(myItem.getmDataPath());
-                                realm.executeTransaction(new Realm.Transaction() {
-                                    @Override
-                                    public void execute(Realm realm) {
-                                        realm.copyToRealmOrUpdate(newItem);
-                                        realm.copyToRealmOrUpdate(newItem);
-                                    }
-                                });
-                                break;
+                                    final AudioItem newItem = new AudioItem();
+                                    newItem.setmIndex(nextIndex);
+                                    nextIndex++;
+                                    newItem.setmId(myItem.getmId());
+                                    newItem.setmAlbumId(myItem.getmAlbumId());
+                                    newItem.setmTitle(myItem.getmTitle());
+                                    newItem.setmArtist(myItem.getmArtist());
+                                    newItem.setmAlbum(myItem.getmAlbum());
+                                    newItem.setmDuration(myItem.getmDuration());
+                                    newItem.setmDataPath(myItem.getmDataPath());
+                                    realm.executeTransaction(new Realm.Transaction() {
+                                        @Override
+                                        public void execute(Realm realm) {
+                                            realm.copyToRealmOrUpdate(newItem);
+                                            realm.copyToRealmOrUpdate(newItem);
+                                        }
+                                    });
+
+                                    Log.d("아이템 추가", "서비스 리스트 최신화");
+                                    //서비스 리스트에 아이디 추가
+                                    AudioApplication.getInstance().getServiceInterface().addPlayList(mId);
+                                    break;
+                                }
+                                else{
+                                    //있으면 토스트*******
+                                    break;
+                                }
+
+
+
+
                             case R.id.lib_del:
                                 //라이브러리 목록에서 삭제하면 됨
                                 Log.d("libMenuClick","라이브러리 목록에서 삭제하면 됨");
@@ -201,8 +231,6 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
 
         //버튼 선언
         public Button optionButton;
-
-
         public ImageView img;
         public TextView MusicTitle;
         public TextView ArtisttName;

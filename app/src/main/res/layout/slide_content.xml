@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/slide_up_entire"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -9,12 +10,100 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#00F"
         android:layout_weight="1"
         >
 
 
+        <RelativeLayout
+            android:id="@+id/slide_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#00F"
+            >
+            <ImageView
+                android:id="@+id/slide_up_albumart"
+                android:layout_width="250dp"
+                android:layout_height="250dp"
+                android:background="#B0B"
+                android:layout_centerInParent="true"
+                />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_alignParentBottom="true"
+                android:background="#FFF"
+                android:weightSum="2"
+                android:orientation="horizontal"
+                >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="#BBB"
+                    android:gravity="center_vertical|left">
+
+                    <Button
+                        android:id="@+id/slide_up_repeat"
+                        android:layout_marginLeft="30dp"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="#ABA"
+                    android:gravity="center_vertical|right">
+                    <Button
+                        android:id="@+id/slide_up_shuffle"
+                        android:layout_marginRight="30dp"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp" />
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/PL_display"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:orientation="vertical"
+            >
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:background="#555"
+                >
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="재생 목록"
+                    android:textSize="20dp"
+                    android:gravity="center_vertical"
+                    android:textColor="#FFF"
+                    android:layout_marginLeft="10dp"
+                    />
+
+            </LinearLayout>
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/PL_recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="vertical"
+                android:background="#F00"
+                />
+
+        </LinearLayout>
+
     </RelativeLayout>
+
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,6 +116,7 @@
             android:layout_height="wrap_content"
             android:background="#FF0">
             <SeekBar
+                android:id="@+id/slide_up_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </LinearLayout>
@@ -38,6 +128,7 @@
             android:background="#F0F">
 
             <TextView
+                android:id="@+id/slide_up_seekbar_progress"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -46,6 +137,7 @@
                 android:text="0:00"
                 />
             <TextView
+                android:id="@+id/slide_up_seekbar_duration"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -62,7 +154,7 @@
             >
 
             <Button
-                android:id="@+id/slide_rewind"
+                android:id="@+id/slide_up_rewind"
                 android:background="@mipmap/ic_rewind"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
@@ -77,7 +169,7 @@
                 android:layout_height="50dp" />
 
             <Button
-                android:id="@+id/slide_forward"
+                android:id="@+id/slide_up_forward"
                 android:background="@mipmap/ic_forward"
                 android:layout_width="50dp"
                 android:layout_height="50dp" />

@@ -1,10 +1,7 @@
 package com.example.kyungjunmin.tmon;
 
-import android.Manifest;
 import android.app.Application;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.support.v4.app.ActivityCompat;
+import android.content.Intent;
 import android.util.Log;
 
 /**
@@ -18,11 +15,10 @@ public class AudioApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("AudioApplication", "onCreate()");
-
-
+        Log.d("AudioApplication","onCreate()");
         mInstance = this;
         mInterface = new AudioServiceInterface(getApplicationContext());
+
     }
 
     public static AudioApplication getInstance() {

@@ -15,6 +15,10 @@ import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -39,6 +43,7 @@ public class AudioService extends Service {
 
     private boolean SHUFFLE;
     private boolean REPEAT;
+    private boolean isFirst = true;
 
     private boolean nowPlaying;
 
@@ -48,9 +53,13 @@ public class AudioService extends Service {
     SharedPreferences pref;
 
 
+    public static final String CMD_PLAY = "action.service.PLAY";
+
+
     public class AudioServiceBinder extends Binder {
         AudioService getService() {
             Log.d("AudioServieBinder","binder() - return AudioService.this");
+
             return AudioService.this;
         }
     }
@@ -67,23 +76,50 @@ public class AudioService extends Service {
         RealmResults<AudioItem>  results;
 
         pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+
         SHUFFLE = pref.getBoolean("SHUFFLE", false);
 
         if(SHUFFLE){
-            //램에서 오디오 아이디 긁어와야함 ******(교차상태)
-            results = realm.where(AudioItem.class).findAll().sort("INDEX", Sort.ASCENDING);
-            for(int i = 0; i < results.size() ; i++){
-                Log.d("서비스 초기에 아이디 받음",i+"번째"+results.get(i).getmTitle());
-                mAudioIds.add(results.get(i).getmId());
-            }
-            long seed = System.nanoTime();
-            Collections.shuffle(mAudioIds, new Random(seed));
-
-
             //셔플 상태면 그 가장 최근의 셔플 리스트를 쉐어드 프리퍼런스에 들고오고
-            //마지막 재생중이 었던 쉐어드 프리퍼런스에서 들고와서
-            //쿼리로 긁은다음에 현재 오디오에 맞춰주자ㅣ
+            String json = pref.getString("TheLastShuffleList", null);
 
+            if(json != null){
+                try{
+                    JSONArray jsonArray = new JSONArray((json));
+                    for(int i = 0; i < jsonArray.length(); i++){
+                        String eachId = jsonArray.optString(i);
+                        mAudioIds.add(Long.valueOf(eachId));
+                    }
+
+
+                    //마지막 재생중이 었던 음악의 아이디를 쉐어드 프리퍼런스에서 들고와서
+                    //쿼리로 긁은 다음에 현재 오디오에 맞춰주자(아이디, 아이템, 포지션)
+                    mCurrentId = pref.getLong("TheLastId",-1);
+                    mCurrentPosition = pref.getInt("TheLastPosition",-1);
+                    mAudioItem = realm.where(AudioItem.class).equalTo("mId", mCurrentId).findFirst();
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                Log.d("SERVICE onCreate","쉐어드PF의 오디오 리스트 값이 null입니다");
+                //쉐어드 프리퍼런스 상태가 없다면 그냥 임의 정렬함
+                //램에서 오디오 아이디 긁어와야함
+                results = realm.where(AudioItem.class).findAll().sort("INDEX", Sort.ASCENDING);
+                for(int i = 0; i < results.size() ; i++){
+                    Log.d("서비스 초기에 아이디 받음",i+"번째"+results.get(i).getmTitle());
+                    mAudioIds.add(results.get(i).getmId());
+                }
+                long seed = System.nanoTime();
+                Collections.shuffle(mAudioIds, new Random(seed));
+
+                //마지막 재생중이 없다면 맨 위 것을 뽑아서
+                //쿼리로 긁은 다음에 현재 오디오에 맞춰주자(아이디, 아이템, 포지션)
+                mCurrentId = mAudioIds.get(0);
+                mCurrentPosition = 0;
+                mAudioItem = realm.where(AudioItem.class).equalTo("mId", mCurrentId).findFirst();
+            }
 
         }else{
             //램에서 오디오 아이디 긁어와야함 ******(순차상태)
@@ -92,9 +128,12 @@ public class AudioService extends Service {
                 Log.d("서비스 초기에 아이디 받음",i+"번째"+results.get(i).getmTitle());
                 mAudioIds.add(results.get(i).getmId());
             }
+
+            //그리고 맨 위에 애를 현재 재생으로 맞춰주자(아이디, 아이템, 포지션)
+            mCurrentId = mAudioIds.get(0);
+            mCurrentPosition = 0;
+            mAudioItem = realm.where(AudioItem.class).equalTo("mId", mCurrentId).findFirst();
         }
-
-
 
 
         for(int i = 0; i<mAudioIds.size(); i++){
@@ -102,6 +141,8 @@ public class AudioService extends Service {
         }
 
         mMediaPlayer = new MediaPlayer();
+
+
         mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
         mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
@@ -112,6 +153,11 @@ public class AudioService extends Service {
                 sendBroadcast(new Intent(BroadcastActions.PREPARED));
                 Log.d("SERVICE-재생준비중인 음악","포지션 : " + mCurrentPosition + ",, 타이틀 : "+mAudioItem.getmTitle());
                 Log.d("SERVICE-setOnPreparedListener","PREPARED 인텐트 전송");
+
+                if(isFirst){
+                    isFirst=false;
+                    pause();
+                }
 
             }
         });
@@ -145,6 +191,27 @@ public class AudioService extends Service {
 
             }
         });
+
+        try {
+            mMediaPlayer.setDataSource(mAudioItem.getmDataPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        try {
+            mMediaPlayer.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+      //  mMediaPlayer.pause();
+
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId){
+        String action = intent.getAction();
+        Log.d("SERVICE","onStartCommand");
+        return START_STICKY;
     }
 
     public void toggleShuffle(){
@@ -183,19 +250,12 @@ public class AudioService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d("AudioService","return SERVICE BINDER()"+intent.toString());
+        Log.d("AudioService- onBind","return SERVICE BINDER()"+intent.toString());
+//        this.startService(new Intent(this, AudioService.class));
         return mBinder;
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mMediaPlayer != null) {
-            mMediaPlayer.stop();
-            mMediaPlayer.release();
-            mMediaPlayer = null;
-        }
-    }
+
 
     public void setSHUFFLE(boolean toggle){
         SHUFFLE = toggle;
@@ -249,7 +309,10 @@ public class AudioService extends Service {
 
     public void play(int position) {
         queryAudioItem(position);
+        pause();
+        Log.d("SERVICE-play(position)","stop전");
         stop();
+        Log.d("SERVICE-play(position)","stop후");
         prepare();
     }
 
