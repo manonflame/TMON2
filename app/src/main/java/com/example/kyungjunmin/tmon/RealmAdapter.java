@@ -1,3 +1,4 @@
+
 package com.example.kyungjunmin.tmon;
 
 import android.content.BroadcastReceiver;
@@ -5,12 +6,8 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.preference.PreferenceManager;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
@@ -25,18 +22,12 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
-import io.realm.Sort;
-
-import static com.example.kyungjunmin.tmon.BroadcastActions.*;
 
 /**
  * Created by KyungJunMin on 2017. 7. 21..
@@ -55,6 +46,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
     public IntentFilter filter;
     public IntentFilter filter2;
 
+    public  AudioServiceInterface mInterface;
 
     //현재 서비스에 올라있는 애
     private int nowPosition;
@@ -69,12 +61,13 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
 
 
     public RealmAdapter(OnStartDragListener dragLlistener,
-                        OnCustomerListChangedListener listChangedListener, Context context) {
+                        OnCustomerListChangedListener listChangedListener, Context context, final AudioServiceInterface mInterface) {
         mDragStartListener = dragLlistener;
         mListChangedListener = listChangedListener;
         mContext = context;
+        this.mInterface = mInterface;
 
-        AudioIds = AudioApplication.getInstance().getServiceInterface().getmAudioIds();
+        AudioIds = mInterface.getmAudioIds();
         realm = Realm.getDefaultInstance();
 
 
@@ -85,14 +78,14 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                 String action = intent.getAction();
                 if(action.equals(BroadcastActions.PREPARED)){
 
-                    int positionGottenByService = AudioApplication.getInstance().getServiceInterface().getmCurrentPosition();
-                    int positionHasBeingGottenByService = AudioApplication.getInstance().getServiceInterface().getmPastPosition();
+                    int positionGottenByService = mInterface.getmCurrentPosition();
+                    int positionHasBeingGottenByService = mInterface.getmPastPosition();
                     Log.d("onReceive",BroadcastActions.PREPARED + " Curr position : " +positionGottenByService + " Past position : " +positionHasBeingGottenByService);
                     notifyItemChanged(positionGottenByService);
                     notifyItemChanged(positionHasBeingGottenByService);
                 }
                 if(action.equals(BroadcastActions.PLAY_STATE_CHANGED)){
-                    int positionGottenByService = AudioApplication.getInstance().getServiceInterface().getmCurrentPosition();
+                    int positionGottenByService = mInterface.getmCurrentPosition();
                     Log.d("onReceive",BroadcastActions.PREPARED + " Curr position : " +positionGottenByService);
                     notifyItemChanged(positionGottenByService);
                 }
@@ -132,10 +125,10 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
         Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, selectedItem.getmAlbumId());
         Picasso.with(holder.itemView.getContext()).load(albumArtUrl).error(R.mipmap.ic_empty_albumart).into(holder.PLAlbmIMG);
 
-        int positionGottenByService = AudioApplication.getInstance().getServiceInterface().getmCurrentPosition();
-        int positionHasBeingGottenByService = AudioApplication.getInstance().getServiceInterface().getmPastPosition();
+        int positionGottenByService = mInterface.getmCurrentPosition();
+        int positionHasBeingGottenByService = mInterface.getmPastPosition();
         if(position == positionGottenByService){
-            if(AudioApplication.getInstance().getServiceInterface().isPlaying()){
+            if(mInterface.isPlaying()){
                 holder.PLArtisttName.setTextColor(Color.RED);
             }else{
                 holder.PLArtisttName.setTextColor(Color.BLUE);
@@ -169,7 +162,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
         holder.PlayMusicByTitle.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 Log.d("Let's Play music!! the posion is :::::", holder.getAdapterPosition()+"");
-                AudioApplication.getInstance().getServiceInterface().play(position);
+                mInterface.play(position);
             }
         });
 
@@ -189,17 +182,17 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                         switch (item.getItemId()) {
                             case R.id.list_delete:
                                 int nextPos;
-                                if(AudioApplication.getInstance().getServiceInterface().getmCurrentPosition() == position){
+                                if(mInterface.getmCurrentPosition() == position){
                                     //현재 재생중인 노래가 있다면
                                     //순차 재생 다음노래 틀고
                                     if (AudioIds.size() - 1 > position) {
                                         // 다음 포지션으로 이동.
                                         nextPos = position+1;
-                                        AudioApplication.getInstance().getServiceInterface().play(nextPos);
+                                        mInterface.play(nextPos);
                                     } else {
                                         // 처음 포지션으로 이동.
                                         nextPos = 0;
-                                        AudioApplication.getInstance().getServiceInterface().play(nextPos);
+                                        mInterface.play(nextPos);
                                     }
 
                                     //램디에서 삭제
@@ -215,17 +208,17 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                                             //서비스의 아이디 목록 최신화
                                             Log.d("아이템 삭제", "서비스 리스트 최신화");
 
-                                            AudioApplication.getInstance().getServiceInterface().getmAudioIds().remove(position);
+                                            mInterface.getmAudioIds().remove(position);
                                         }
                                     });
 
                                     //서비스의 현재 포지션 조정
                                     if(nextPos == 0){
-                                        AudioApplication.getInstance().getServiceInterface().setmCurrentPosition(0);
+                                        mInterface.setmCurrentPosition(0);
                                         notifyDataSetChanged();
                                     }
                                     else{
-                                        AudioApplication.getInstance().getServiceInterface().setmCurrentPosition(nextPos);
+                                        mInterface.setmCurrentPosition(nextPos);
                                         notifyDataSetChanged();
                                     }
                                 }
@@ -244,7 +237,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                                             //서비스의 아이디 목록 최신화
                                             Log.d("아이템 삭제", "서비스 리스트 최신화");
 
-                                            AudioApplication.getInstance().getServiceInterface().getmAudioIds().remove(position);
+                                            mInterface.getmAudioIds().remove(position);
 
                                             notifyDataSetChanged();
                                         }
@@ -279,10 +272,10 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
             @Override
             public void execute(Realm realm) {
 
-                boolean isShuffle = AudioApplication.getInstance().getServiceInterface().getSHUFFLE();
+                boolean isShuffle = mInterface.getSHUFFLE();
                 if(isShuffle){
                     //교차 상태의 교환
-                    Collections.swap(AudioApplication.getInstance().getServiceInterface().getmAudioIds(),fromPosition,toPosition);
+                    Collections.swap(mInterface.getmAudioIds(),fromPosition,toPosition);
                 }
                 else {
                     //순차 상태의 교환
@@ -290,13 +283,13 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                     changedItem.setmIndex(beforeIndex);
                     realm.copyToRealmOrUpdate(selectedItem);
                     realm.copyToRealmOrUpdate(changedItem);
-                    Collections.swap(AudioApplication.getInstance().getServiceInterface().getmAudioIds(),fromPosition,toPosition);
+                    Collections.swap(mInterface.getmAudioIds(),fromPosition,toPosition);
                 }
             }
         });
-        AudioIds = AudioApplication.getInstance().getServiceInterface().getmAudioIds();
-        if(AudioApplication.getInstance().getServiceInterface().getmCurrentPosition() == fromPosition){
-            AudioApplication.getInstance().getServiceInterface().setmCurrentPosition(toPosition);
+        AudioIds = mInterface.getmAudioIds();
+        if(mInterface.getmCurrentPosition() == fromPosition){
+            mInterface.setmCurrentPosition(toPosition);
         }
         notifyItemMoved(fromPosition, toPosition);
         notifyItemChanged(fromPosition);

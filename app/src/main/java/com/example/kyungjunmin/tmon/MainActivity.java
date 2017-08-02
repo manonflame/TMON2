@@ -10,25 +10,18 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.provider.ContactsContract;
 import android.provider.MediaStore;
-import android.support.annotation.BoolRes;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.view.menu.MenuItemImpl;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -36,9 +29,9 @@ import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -57,14 +50,12 @@ import java.util.List;
 import java.util.Random;
 
 import io.realm.Realm;
-import io.realm.RealmChangeListener;
 import io.realm.RealmConfiguration;
 import io.realm.RealmQuery;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
 import static android.view.View.GONE;
-import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 
 public class MainActivity extends AppCompatActivity implements OnCustomerListChangedListener, OnStartDragListener{
@@ -159,12 +150,15 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
     List<AudioItem> entireList;
 
 
+
+    private AudioServiceInterface mInterface;
+
     class MyThread extends Thread {
         @Override
         public void run() { // 쓰레드가 시작되면 콜백되는 메서드
             // 씨크바 막대기 조금씩 움직이기 (노래 끝날 때까지 반복)
-            while((!AudioApplication.getInstance().getServiceInterface().checkNull()) && AudioApplication.getInstance().getServiceInterface().isPlaying()) {
-                slideUpSeekBar.setProgress(AudioApplication.getInstance().getServiceInterface().getmMediaPlayer().getCurrentPosition());
+            while((!mInterface.checkNull()) && mInterface.isPlaying()) {
+                slideUpSeekBar.setProgress(mInterface.getmMediaPlayer().getCurrentPosition());
             }
         }
     }
@@ -179,8 +173,8 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         setSupportActionBar(toolbar);
 
         Log.d("onCreate()","start");
-        Log.d("onCreate() startService ","startService");
-        startService(new Intent(this, AudioService.class));
+
+
 
         //미디어 스토어 권한체크
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
@@ -223,27 +217,27 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
                     case R.id.slide_up_forward:
                         Log.d("onClick", "다음곡");
-                        AudioApplication.getInstance().getServiceInterface().forward();
+                        mInterface.forward();
                         break;
 
                     case R.id.slide_up_play:
                         Log.d("onClick", "재생");
-                        AudioApplication.getInstance().getServiceInterface().togglePlay();
+                        mInterface.togglePlay();
                         break;
 
                     case R.id.slide_up_rewind:
                         Log.d("onClick","이전곡");
-                        AudioApplication.getInstance().getServiceInterface().rewind();
+                        mInterface.rewind();
                         break;
 
                     case R.id.slide_up_repeat:
                         Log.d("onClick","반복");
-                        AudioApplication.getInstance().getServiceInterface().toggleRepeat();
+                        mInterface.toggleRepeat();
                         break;
 
                     case R.id.slide_play:
                         Log.d("onClick 내려온 상태","재생");
-                        AudioApplication.getInstance().getServiceInterface().togglePlay();
+                        mInterface.togglePlay();
                         break;
 
                     case R.id.slide_up_shuffle:
@@ -255,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                             isShuffle = false;
                             editor.putBoolean("SHUFFLE",false);
                             editor.commit();
-                            AudioApplication.getInstance().getServiceInterface().setSHUFFLE(isShuffle);
+                            mInterface.setSHUFFLE(isShuffle);
                             slideUpShuffle.setBackgroundResource(R.mipmap.ic_shuffle_off);
 
                             query = realm.where(AudioItem.class);
@@ -266,17 +260,17 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
                             int size = results.size();
                             //ㄴ새 아이디 리스트
-                            ArrayList<Long> newAudioIds = AudioApplication.getInstance().getServiceInterface().getmAudioIds();
+                            ArrayList<Long> newAudioIds = mInterface.getmAudioIds();
                             for(int i = 0 ; i < size ; i++){
                                 long curId = results.get(i).getmId();
-                                if(curId == AudioApplication.getInstance().getServiceInterface().getAudioItem().getmId()){
+                                if(curId == mInterface.getAudioItem().getmId()){
                                     Log.d("순차 -> 교차","새 진행준 포지션"+i);
-                                    AudioApplication.getInstance().getServiceInterface().setmCurrentPosition(i);
+                                    mInterface.setmCurrentPosition(i);
                                 }
                                 newAudioIds.set(i, curId);
                             }
                             //서비스 ids변경
-                            AudioApplication.getInstance().getServiceInterface().setPlayList(newAudioIds);
+                            mInterface.setPlayList(newAudioIds);
 
 
 
@@ -285,14 +279,14 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                         else{
                             //교차재생으로
                             Log.d("onClick","순차 -> 교차");
-                           isShuffle = true;
+                            isShuffle = true;
                             editor.putBoolean("SHUFFLE",true);
                             editor.commit();
-                            AudioApplication.getInstance().getServiceInterface().setSHUFFLE(isShuffle);
+                            mInterface.setSHUFFLE(isShuffle);
                             slideUpShuffle.setBackgroundResource(R.mipmap.ic_shuffle_on);
 
-                            ArrayList<Long> originAudioIds = AudioApplication.getInstance().getServiceInterface().getmAudioIds();
-                            ArrayList<Long> newAudioIds = AudioApplication.getInstance().getServiceInterface().getmAudioIds();
+                            ArrayList<Long> originAudioIds = mInterface.getmAudioIds();
+                            ArrayList<Long> newAudioIds = mInterface.getmAudioIds();
                             int size = newAudioIds.size();
 
                             long seed = System.nanoTime();
@@ -305,12 +299,12 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
                             //재생 중인 음악이 있을 때 섞기
                             for(int i = 0 ; i < size ; i++){
-                                if(originAudioIds.get(i) == AudioApplication.getInstance().getServiceInterface().getAudioItem().getmId()){
+                                if(originAudioIds.get(i) == mInterface.getAudioItem().getmId()){
                                     whereCurId = i;
                                 }
                             }
 
-                            AudioApplication.getInstance().getServiceInterface().setmCurrentPosition(0);
+                            mInterface.setmCurrentPosition(0);
 
                             Collections.swap(newAudioIds, 0 , whereCurId);
                             long ZeroId = newAudioIds.remove(0);
@@ -321,16 +315,16 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                                 Log.d("newAudioIds", ""+ newAudioIds.get(i));
                             }
 
-                            AudioApplication.getInstance().getServiceInterface().setPlayList(newAudioIds);
+                            mInterface.setPlayList(newAudioIds);
 
 
 
                             Log.d("AudioService - onDestroy()","셔플 상태 저장");
                             JSONArray jsonArray = new JSONArray();
-                            for (int i = 0; i < AudioApplication.getInstance().getServiceInterface().getmAudioIds().size(); i++) {
-                                jsonArray.put(AudioApplication.getInstance().getServiceInterface().getmAudioIds().get(i));
+                            for (int i = 0; i < mInterface.getmAudioIds().size(); i++) {
+                                jsonArray.put(mInterface.getmAudioIds().get(i));
                             }
-                            if (!AudioApplication.getInstance().getServiceInterface().getmAudioIds().isEmpty()) {
+                            if (!mInterface.getmAudioIds().isEmpty()) {
                                 Log.d("SERVICE onDestroy", "쉐어드PF의 오디오 리스트가 null입니다.");
                                 editor.putString("TheLastShuffleList", jsonArray.toString());
                             } else {
@@ -339,8 +333,8 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
 
                             //포지션하고 아이디도 저장해야함 ******
-                            editor.putLong("TheLastId", AudioApplication.getInstance().getServiceInterface().getAudioItem().getmId());
-                            editor.putInt("TheLastPosition", AudioApplication.getInstance().getServiceInterface().getmCurrentPosition());
+                            editor.putLong("TheLastId", mInterface.getAudioItem().getmId());
+                            editor.putInt("TheLastPosition", mInterface.getmCurrentPosition());
                             editor.apply();
 
 
@@ -390,7 +384,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
         //리사이클러 뷰 초기에 띄우기
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview);
-        mAdapter = new myAdapter(list, 1, this);
+        mAdapter = new myAdapter(list, 1, this, mInterface);
         mRecyclerView.setAdapter(mAdapter);
         layoutManager = new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(layoutManager);
@@ -418,7 +412,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if(fromUser) {
-                    AudioApplication.getInstance().getServiceInterface().getmMediaPlayer().seekTo(progress);
+                    mInterface.getmMediaPlayer().seekTo(progress);
                 }
                 int m = progress / 60000;
                 int s = (progress % 60000) / 1000;
@@ -486,7 +480,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
-                AudioItem nowPlayingItem = AudioApplication.getInstance().getServiceInterface().getAudioItem();
+                AudioItem nowPlayingItem = mInterface.getAudioItem();
                 Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, nowPlayingItem.getmAlbumId());
 
 
@@ -494,8 +488,8 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                 Picasso.with(slideAlbumArt.getContext()).load(albumArtUrl).error(R.mipmap.ic_empty_albumart).into(slideAlbumArt);
 
                 SharedPreferences.Editor editor = pref.edit();
-                editor.putLong("TheLastId", AudioApplication.getInstance().getServiceInterface().getAudioItem().getmId());
-                editor.putInt("TheLastPosition", AudioApplication.getInstance().getServiceInterface().getmCurrentPosition());
+                editor.putLong("TheLastId", mInterface.getAudioItem().getmId());
+                editor.putInt("TheLastPosition", mInterface.getmCurrentPosition());
                 editor.apply();
 
 
@@ -514,7 +508,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
 
                 Log.d("MAIN BROADCAST RECEIVER", "현재 받은 인텐트는 "+action + "입니다");
-                if(AudioApplication.getInstance().getServiceInterface().isPlaying()){
+                if(mInterface.isPlaying()){
                     Log.d("MAIN BROADCAST RECEIVER", "재생 중이라 아이콘 바꿈");
                     slidePlay.setBackgroundResource(R.mipmap.ic_pause);
                     slideUpPlay.setBackgroundResource(R.mipmap.ic_pause_circle);
@@ -533,7 +527,12 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         this.registerReceiver(mBCReceiver, filter);
         this.registerReceiver(mBCReceiver, filter2);
 
-
+        mInterface = new AudioServiceInterface(this);
+        Log.d("onCreate() startService ","startService");
+        startService(new Intent(this, AudioService.class));
+        Log.d("AudioServiceInterface","인텐트");
+//        this.bindService(new Intent(this, AudioService.class)
+//                .setPackage(this.getPackageName()), mInterface.getmServiceConnection(), Context.BIND_AUTO_CREATE);
 
     }
 
@@ -579,7 +578,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
     }
 
     void makeRealmAdapter(){
-        rAdapter = new RealmAdapter(this, this, this);
+        rAdapter = new RealmAdapter(this, this, this, mInterface);
         ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(rAdapter);
         mItemTouchHelper = new ItemTouchHelper(callback);
         mItemTouchHelper.attachToRecyclerView(playlistVeiw);
@@ -617,7 +616,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        AudioApplication.getInstance().getServiceInterface().checkNull();
+        mInterface.checkNull();
         this.menu = menu;
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
@@ -703,7 +702,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                     Log.e("card view state", "true");
 
                     menu.findItem(R.id.action_viewChange).setIcon(R.drawable.ic_view_change);
-                    mAdapter = new myAdapter(list, 1, this);
+                    mAdapter = new myAdapter(list, 1, this, mInterface);
                     mRecyclerView.setAdapter(mAdapter);
                     layoutManager = new StaggeredGridLayoutManager(2,StaggeredGridLayoutManager.VERTICAL);
                     mRecyclerView.setLayoutManager(layoutManager);
@@ -711,7 +710,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                     Log.e("card view state", "false");
 
                     menu.findItem(R.id.action_viewChange).setIcon(R.mipmap.action_cardview);
-                    mAdapter = new myAdapter(list, 0, this);
+                    mAdapter = new myAdapter(list, 0, this, mInterface);
                     mRecyclerView.setAdapter(mAdapter);
                     layoutManager = new LinearLayoutManager(this);
                     mRecyclerView.setLayoutManager(layoutManager);

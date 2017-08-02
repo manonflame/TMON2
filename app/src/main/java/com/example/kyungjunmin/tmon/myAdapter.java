@@ -1,14 +1,12 @@
+
 package com.example.kyungjunmin.tmon;
 
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -16,20 +14,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.Realm;
-import io.realm.RealmConfiguration;
-import io.realm.RealmObject;
 import io.realm.RealmQuery;
 import io.realm.RealmResults;
-import io.realm.Sort;
 
 /**
  * Created by KyungJunMin on 2017. 7. 18..
@@ -51,15 +44,16 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
 
     int nextIndex;
 
-
+    public  AudioServiceInterface mInterface;
     IntentFilter filter;
 
 
-    public myAdapter(List<AudioItem> items , int viewType, Context context){
+    public myAdapter(List<AudioItem> items , int viewType, Context context, AudioServiceInterface mInterface){
         Log.e("MY ADAPTER : onCreateViewHolder","MYADAPTER CONSTRUCTOR");
         this.albumList = items;
         this.viewType = viewType;
         this.context =  context;
+        this.mInterface = mInterface;
         mDataset = null;
 
 
@@ -184,16 +178,13 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
 
                                     Log.d("아이템 추가", "서비스 리스트 최신화");
                                     //서비스 리스트에 아이디 추가
-                                    AudioApplication.getInstance().getServiceInterface().addPlayList(mId);
+                                    mInterface.addPlayList(mId);
                                     break;
                                 }
                                 else{
                                     //있으면 토스트*******
                                     break;
                                 }
-
-
-
 
                             case R.id.lib_del:
                                 //라이브러리 목록에서 삭제하면 됨

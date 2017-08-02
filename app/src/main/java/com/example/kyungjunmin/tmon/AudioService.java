@@ -3,16 +3,12 @@ package com.example.kyungjunmin.tmon;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -53,6 +49,11 @@ public class AudioService extends Service {
     SharedPreferences pref;
 
 
+
+    private NotificationPlayer mNotificationPlayer;
+
+
+
     public static final String CMD_PLAY = "action.service.PLAY";
 
 
@@ -71,9 +72,12 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d("AudioService","onCreate()");
+
+        isFirst = true;
         //램연결
+        Realm.init(this);
         realm = Realm.getDefaultInstance();
-        RealmResults<AudioItem>  results;
+        RealmResults<AudioItem> results;
 
         pref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -116,7 +120,7 @@ public class AudioService extends Service {
 
                 //마지막 재생중이 없다면 맨 위 것을 뽑아서
                 //쿼리로 긁은 다음에 현재 오디오에 맞춰주자(아이디, 아이템, 포지션)
-                mCurrentId = mAudioIds.get(0);
+                if(mAudioIds.size() != 0){ mCurrentId =  mAudioIds.get(0); }
                 mCurrentPosition = 0;
                 mAudioItem = realm.where(AudioItem.class).equalTo("mId", mCurrentId).findFirst();
             }
@@ -130,7 +134,7 @@ public class AudioService extends Service {
             }
 
             //그리고 맨 위에 애를 현재 재생으로 맞춰주자(아이디, 아이템, 포지션)
-            mCurrentId = mAudioIds.get(0);
+            if(mAudioIds.size() != 0){ mCurrentId =  mAudioIds.get(0); }
             mCurrentPosition = 0;
             mAudioItem = realm.where(AudioItem.class).equalTo("mId", mCurrentId).findFirst();
         }
@@ -153,7 +157,7 @@ public class AudioService extends Service {
                 sendBroadcast(new Intent(BroadcastActions.PREPARED));
                 Log.d("SERVICE-재생준비중인 음악","포지션 : " + mCurrentPosition + ",, 타이틀 : "+mAudioItem.getmTitle());
                 Log.d("SERVICE-setOnPreparedListener","PREPARED 인텐트 전송");
-
+//                updateNotificationPlayer();
                 if(isFirst){
                     isFirst=false;
                     pause();
@@ -169,7 +173,7 @@ public class AudioService extends Service {
                 forward();
                 sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
                 Log.d("SERVICE-setOnCompletionListener","PLAY_STATE_CHANGED 인텐트 전송");
-
+//                updateNotificationPlayer();
             }
         });
 
@@ -181,7 +185,7 @@ public class AudioService extends Service {
                 isPrepared = false;
                 sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
                 Log.d("SERVICE-setOnErrorListener","PLAY_STATE_CHANGED 인텐트 전송");
-
+//                updateNotificationPlayer();
                 return false;
             }
         });
@@ -192,26 +196,67 @@ public class AudioService extends Service {
             }
         });
 
-        try {
-            mMediaPlayer.setDataSource(mAudioItem.getmDataPath());
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(mAudioIds.size() != 0) {
+            try {
+                mMediaPlayer.setDataSource(mAudioItem.getmDataPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//            try {
+//                mMediaPlayer.prepare();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
         }
-        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        try {
-            mMediaPlayer.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-      //  mMediaPlayer.pause();
-
+        mNotificationPlayer = new NotificationPlayer(this);
     }
+
+
+    private void updateNotificationPlayer() {
+        Log.i("updateNotificationPlayer","막하기 편해요");
+        if (mNotificationPlayer != null) {
+            mNotificationPlayer.updateNotificationPlayer();
+            Log.i("updateNotificationPlayer","막하기 편해요2");
+        }
+        Log.i("updateNotificationPlayer","막하기 편해요3");
+    }
+
+    private void removeNotificationPlayer() {
+        if (mNotificationPlayer != null) {
+            mNotificationPlayer.removeNotificationPlayer();
+        }
+    }
+
+    public long getmCurrentId(){
+        return mCurrentId;
+    }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
-        String action = intent.getAction();
+
         Log.d("SERVICE","onStartCommand");
-        return START_STICKY;
+
+        if (intent != null) {
+            String action = intent.getAction();
+            if (CommandActions.TOGGLE_PLAY.equals(action)) {
+                if (isPlaying()) {
+                    pause();
+                } else {
+                    play();
+                }
+            } else if (CommandActions.REWIND.equals(action)) {
+                rewind();
+            } else if (CommandActions.FORWARD.equals(action)) {
+                forward();
+            } else if (CommandActions.CLOSE.equals(action)) {
+                pause();
+                removeNotificationPlayer();
+            }
+        }
+
+        return super.onStartCommand(intent, flags, startId);
     }
 
     public void toggleShuffle(){
@@ -332,6 +377,7 @@ public class AudioService extends Service {
         if (isPrepared) {
             mMediaPlayer.start();
             sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
+//            updateNotificationPlayer();
             Log.d("SERVICE-play","PLAY_STATE_CHANGED 인텐트 전송");
         }
     }
@@ -340,6 +386,7 @@ public class AudioService extends Service {
         if (isPrepared) {
             mMediaPlayer.pause();
             sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
+//            updateNotificationPlayer();
             Log.d("SERVICE-pause","PLAY_STATE_CHANGED 인텐트 전송");
         }
     }

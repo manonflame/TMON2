@@ -2,7 +2,6 @@ package com.example.kyungjunmin.tmon;
 
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.MediaPlayer;
 import android.os.IBinder;
@@ -33,12 +32,11 @@ public class AudioServiceInterface {
                 mService = null;
             }
         };
-
-
-        Log.d("AudioServiceInterface","인텐트");
-        context.bindService(new Intent(context, AudioService.class)
-                .setPackage(context.getPackageName()), mServiceConnection, Context.BIND_AUTO_CREATE);
     }
+
+    public ServiceConnection getmServiceConnection(){
+        return mServiceConnection;
+    };
     public void addPlayList(Long mId){
         if (mService != null) {
             Log.d("addPlayList in INTERFACE","NOT null" );
