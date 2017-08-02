@@ -2,7 +2,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="40dp"
-    android:background="#F0F"
     android:orientation="horizontal"
     android:weightSum="1"
     android:gravity="center_vertical">
@@ -12,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:background="#FF0"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:weightSum="1"
@@ -29,7 +27,6 @@
             android:layout_marginLeft="5dp"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="#505"
             android:src="@mipmap/ic_empty_albumart"
             />
         <LinearLayout
@@ -37,7 +34,6 @@
             android:id="@+id/playlist_play_music"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="#FAF"
             android:orientation="vertical"
             android:gravity="center_vertical"
             android:layout_marginLeft="5dp"

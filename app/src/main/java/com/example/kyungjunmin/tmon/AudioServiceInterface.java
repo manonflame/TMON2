@@ -2,6 +2,7 @@ package com.example.kyungjunmin.tmon;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.MediaPlayer;
 import android.os.IBinder;
@@ -21,7 +22,7 @@ public class AudioServiceInterface {
         mServiceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
-                Log.d("onServiceConnected","SUCCCESS TO MAKE SERVICE"+service.toString());
+                Log.d("onServiceConnected","SUCCCESS TO CONNECT SERVICE"+service.toString());
                 mService = ((AudioService.AudioServiceBinder) service).getService();
             }
 
@@ -32,6 +33,9 @@ public class AudioServiceInterface {
                 mService = null;
             }
         };
+    }
+    public AudioService getmService(){
+        return mService;
     }
 
     public ServiceConnection getmServiceConnection(){

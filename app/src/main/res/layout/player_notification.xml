@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="100dp"
     android:gravity="center"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    >
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -13,7 +14,7 @@
         android:gravity="center"
         android:orientation="vertical"
         android:padding="5dp"
-        android:layout_gravity="center_vertical">
+        >
 
 
         <TextView
@@ -33,24 +34,29 @@
     
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        >
 
-        <Button
+        <ImageButton
             android:id="@+id/notification_rewind"
+            android:src="@mipmap/ic_rewind"
             android:layout_width="50dp"
             android:layout_height="wrap_content" />
-        
-        <Button
+
+        <ImageButton
             android:id="@+id/notification_play"
             android:layout_width="50dp"
             android:layout_height="wrap_content" />
-        
-        <Button
+
+        <ImageButton
             android:id="@+id/notification_forward"
             android:layout_width="50dp"
+            android:src="@mipmap/ic_forward"
             android:layout_height="wrap_content" />
 
         <ImageView
+            android:id="@+id/notification_albumart"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:background="#0F0"/>

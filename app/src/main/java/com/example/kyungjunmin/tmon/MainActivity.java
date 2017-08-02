@@ -175,6 +175,12 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         Log.d("onCreate()","start");
 
 
+        mInterface = new AudioServiceInterface(this);
+        Log.d("onCreate() startService ","startService");
+        startService(new Intent(this, AudioService.class));
+        Log.d("AudioServiceInterface","인텐트");
+        this.bindService(new Intent(this, AudioService.class).setPackage(this.getPackageName()), mInterface.getmServiceConnection(), Context.BIND_AUTO_CREATE);
+
 
         //미디어 스토어 권한체크
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
@@ -527,12 +533,47 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         this.registerReceiver(mBCReceiver, filter);
         this.registerReceiver(mBCReceiver, filter2);
 
-        mInterface = new AudioServiceInterface(this);
-        Log.d("onCreate() startService ","startService");
-        startService(new Intent(this, AudioService.class));
-        Log.d("AudioServiceInterface","인텐트");
-//        this.bindService(new Intent(this, AudioService.class)
-//                .setPackage(this.getPackageName()), mInterface.getmServiceConnection(), Context.BIND_AUTO_CREATE);
+
+        if(mInterface == null){
+            Log.d("MAIN CREATE", "mInterface 비어있음");
+        }
+        if(mInterface.isPlaying()){
+            Log.d("MAIN CREATE", "서비스 실행중");
+            AudioItem nowPlayingItem = mInterface.getAudioItem();
+            Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, nowPlayingItem.getmAlbumId());
+
+
+            Picasso.with(slideUpAlbumArt.getContext()).load(albumArtUrl).error(R.mipmap.ic_empty_albumart).into(slideUpAlbumArt);
+            Picasso.with(slideAlbumArt.getContext()).load(albumArtUrl).error(R.mipmap.ic_empty_albumart).into(slideAlbumArt);
+
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putLong("TheLastId", mInterface.getAudioItem().getmId());
+            editor.putInt("TheLastPosition", mInterface.getmCurrentPosition());
+            editor.apply();
+
+
+            slideTitle.setText(nowPlayingItem.getmTitle());
+            slideArtist.setText(nowPlayingItem.getmArtist());
+
+            int musicDuration = (int) nowPlayingItem.getmDuration();
+            slideUpSeekBar.setMax(musicDuration);
+            int m = musicDuration / 60000;
+            int s = (musicDuration % 60000) / 1000;
+            String strTime = String.format("%02d:%02d", m, s);
+            slideUpSeekBarDuration.setText(strTime);
+            Log.d("MAIN BROADCAST RECEIVER", "getMAX : "  + slideUpSeekBar.getMax());
+
+            new MyThread().start();
+
+            slidePlay.setBackgroundResource(R.mipmap.ic_pause);
+            slideUpPlay.setBackgroundResource(R.mipmap.ic_pause_circle);
+        }
+        else{
+            Log.d("MAIN CREATE", "서비스 실행중이 아닌듯");
+//            Log.d("MAIN CREATE 실행중이 아닌 듯", mInterface.getAudioItem().getmTitle());
+        }
+
+
 
     }
 
@@ -781,6 +822,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
     protected void onDestroy(){
         Log.d("MAIN ONDESTROY","START DESTROY");
         unregisterReceiver(mBCReceiver);
+        this.unbindService(mInterface.getmServiceConnection());
         super.onDestroy();
     }
 

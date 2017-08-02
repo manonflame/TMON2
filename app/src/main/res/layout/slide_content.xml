@@ -19,12 +19,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#00F"
+
             >
             <ImageView
                 android:id="@+id/slide_up_albumart"
                 android:layout_width="250dp"
                 android:layout_height="250dp"
-                android:background="#B0B"
                 android:layout_centerInParent="true"
                 />
 
@@ -32,7 +32,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_alignParentBottom="true"
-                android:background="#FFF"
                 android:weightSum="2"
                 android:orientation="horizontal"
                 >
@@ -41,7 +40,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="#BBB"
+
                     android:gravity="center_vertical|left">
 
                     <Button
@@ -54,7 +53,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="#ABA"
                     android:gravity="center_vertical|right">
                     <Button
                         android:id="@+id/slide_up_shuffle"
@@ -96,7 +94,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scrollbars="vertical"
-                android:background="#F00"
+
                 />
 
         </LinearLayout>
@@ -108,13 +106,12 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:background="#0F0"
         android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#FF0">
+            >
             <SeekBar
                 android:id="@+id/slide_up_seekbar"
                 android:layout_width="match_parent"
@@ -125,14 +122,13 @@
             android:layout_height="wrap_content"
             android:weightSum="2"
             android:orientation="horizontal"
-            android:background="#F0F">
+            >
 
             <TextView
                 android:id="@+id/slide_up_seekbar_progress"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="#FAF"
                 android:gravity="left"
                 android:text="0:00"
                 />
@@ -141,7 +137,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="#AFF"
                 android:gravity="right"
                 android:text="0:00"
                 />
@@ -149,7 +144,6 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#AAF"
             android:gravity="center"
             >
 

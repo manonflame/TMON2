@@ -38,6 +38,8 @@ public class NotificationPlayer {
         updateNotificationPlayer();
     }
 
+
+
     public void updateNotificationPlayer() {
         Log.i("NotificationPlayer", "updateNotificationPlayer()");
 
@@ -48,7 +50,6 @@ public class NotificationPlayer {
 
     public void removeNotificationPlayer() {
         Log.i("NotificationPlayer", "removeNotificationPlayer()");
-
         cancel();
         mService.stopForeground(true);
         isForeground = false;
@@ -76,14 +77,18 @@ public class NotificationPlayer {
             Intent mainActivity = new Intent(mService, MainActivity.class);
             mMainPendingIntent = PendingIntent.getActivity(mService, 0, mainActivity, 0);
             mRemoteViews = createRemoteView(R.layout.player_notification);
-
+            Intent actionClose = new Intent(CommandActions.CLOSE);
+            PendingIntent close = PendingIntent.getService(mService, 0, actionClose, 0);
 
 
             mNotificationBuilder = new NotificationCompat.Builder(mService);
             mNotificationBuilder.setSmallIcon(R.mipmap.ic_launcher)
-                    .setOngoing(true)
+                    .setOngoing(false)
                     .setContentIntent(mMainPendingIntent)
-                    .setContent(mRemoteViews);
+                    .setAutoCancel(true)
+                    .setContent(mRemoteViews)
+                    .setDeleteIntent(close);
+
 
             Notification notification = mNotificationBuilder.build();
             notification.priority = Notification.PRIORITY_MAX;
@@ -113,6 +118,13 @@ public class NotificationPlayer {
 
 
             super.onPostExecute(notification);
+
+            if (!mService.isPlaying()) {
+                isForeground = false;
+                mService.stopForeground(false);
+            }
+
+
             try {
                 mNotificationManager.notify(NOTIFICATION_PLAYER_ID, notification);
             } catch (Exception e) {
@@ -128,16 +140,14 @@ public class NotificationPlayer {
             Intent actionTogglePlay = new Intent(CommandActions.TOGGLE_PLAY);
             Intent actionForward = new Intent(CommandActions.FORWARD);
             Intent actionRewind = new Intent(CommandActions.REWIND);
-//            Intent actionClose = new Intent(CommandActions.CLOSE);
+
             PendingIntent togglePlay = PendingIntent.getService(mService, 0, actionTogglePlay, 0);
             PendingIntent forward = PendingIntent.getService(mService, 0, actionForward, 0);
             PendingIntent rewind = PendingIntent.getService(mService, 0, actionRewind, 0);
-//            PendingIntent close = PendingIntent.getService(mService, 0, actionClose, 0);
 
             remoteView.setOnClickPendingIntent(R.id.notification_play, togglePlay);
             remoteView.setOnClickPendingIntent(R.id.notification_forward, forward);
             remoteView.setOnClickPendingIntent(R.id.notification_rewind, rewind);
-
             return remoteView;
         }
 
@@ -148,6 +158,8 @@ public class NotificationPlayer {
 
             if (mService.isPlaying()) {
                 remoteViews.setImageViewResource(R.id.notification_play, R.mipmap.ic_pause);
+                mService.startForeground(NOTIFICATION_PLAYER_ID, notification);
+                isForeground = true;
             } else {
                 remoteViews.setImageViewResource(R.id.notification_play, R.mipmap.ic_play);
             }
@@ -158,21 +170,23 @@ public class NotificationPlayer {
 
             Log.i("NotificationPlayer", "updateRemoteView() 의 아이템의 타이틀 "+ musicItem.getmTitle());
 
+
             if (musicItem == null)
                 return;
             String title = musicItem.getmTitle();
             String artist = musicItem.getmArtist();
             remoteViews.setTextViewText(R.id.txt_title, title);
-//            remoteViews.setTextViewText(R.id.artistTextview, artist);
+            remoteViews.setTextViewText(R.id.artist_name, artist);
             final Uri albumArtUri = ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), musicItem.getmAlbumId());
             Handler uiHandler = new Handler(Looper.getMainLooper());
             uiHandler.post(new Runnable() {
                 @Override
                 public void run() {
+                    Log.i("NotificationPlayer", "updateRemoteView() run()");
                     Picasso.with(mService)
                             .load(albumArtUri)
                             .error(R.mipmap.ic_empty_albumart)
-                            .into(remoteViews, R.id.img_albumart, NOTIFICATION_PLAYER_ID, notification);
+                            .into(remoteViews, R.id.notification_albumart, NOTIFICATION_PLAYER_ID, notification);
                 }
             });
             realm.close();

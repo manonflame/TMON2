@@ -178,6 +178,9 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
 
                                     Log.d("아이템 추가", "서비스 리스트 최신화");
                                     //서비스 리스트에 아이디 추가
+                                    if(mInterface==null){
+                                        Log.d("mAdapter","null");
+                                    }
                                     mInterface.addPlayList(mId);
                                     break;
                                 }
