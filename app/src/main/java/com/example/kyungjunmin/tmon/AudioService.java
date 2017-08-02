@@ -71,6 +71,33 @@ public class AudioService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+    }
+
+
+    private void updateNotificationPlayer() {
+        Log.i("updateNotificationPlayer","막하기 편해요");
+        if (mNotificationPlayer != null) {
+            mNotificationPlayer.updateNotificationPlayer();
+            Log.i("updateNotificationPlayer","막하기 편해요2");
+        }
+        Log.i("updateNotificationPlayer","막하기 편해요3");
+    }
+
+    private void removeNotificationPlayer() {
+        if (mNotificationPlayer != null) {
+            mNotificationPlayer.removeNotificationPlayer();
+        }
+    }
+
+    public long getmCurrentId(){
+        return mCurrentId;
+    }
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId){
+
         Log.d("AudioService","onCreate()");
 
         isFirst = true;
@@ -157,10 +184,14 @@ public class AudioService extends Service {
                 sendBroadcast(new Intent(BroadcastActions.PREPARED));
                 Log.d("SERVICE-재생준비중인 음악","포지션 : " + mCurrentPosition + ",, 타이틀 : "+mAudioItem.getmTitle());
                 Log.d("SERVICE-setOnPreparedListener","PREPARED 인텐트 전송");
-//                updateNotificationPlayer();
+                updateNotificationPlayer();
                 if(isFirst){
+                    Log.d("SERVICE-setOnPreparedListener","First다");
                     isFirst=false;
                     pause();
+                }
+                else{
+                    Log.d("SERVICE-setOnPreparedListener","First아니다");
                 }
 
             }
@@ -173,7 +204,7 @@ public class AudioService extends Service {
                 forward();
                 sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
                 Log.d("SERVICE-setOnCompletionListener","PLAY_STATE_CHANGED 인텐트 전송");
-//                updateNotificationPlayer();
+                updateNotificationPlayer();
             }
         });
 
@@ -185,7 +216,7 @@ public class AudioService extends Service {
                 isPrepared = false;
                 sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
                 Log.d("SERVICE-setOnErrorListener","PLAY_STATE_CHANGED 인텐트 전송");
-//                updateNotificationPlayer();
+                updateNotificationPlayer();
                 return false;
             }
         });
@@ -203,40 +234,21 @@ public class AudioService extends Service {
                 e.printStackTrace();
             }
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//            try {
-//                mMediaPlayer.prepare();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                mMediaPlayer.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         mNotificationPlayer = new NotificationPlayer(this);
-    }
 
-
-    private void updateNotificationPlayer() {
-        Log.i("updateNotificationPlayer","막하기 편해요");
-        if (mNotificationPlayer != null) {
-            mNotificationPlayer.updateNotificationPlayer();
-            Log.i("updateNotificationPlayer","막하기 편해요2");
-        }
-        Log.i("updateNotificationPlayer","막하기 편해요3");
-    }
-
-    private void removeNotificationPlayer() {
-        if (mNotificationPlayer != null) {
-            mNotificationPlayer.removeNotificationPlayer();
-        }
-    }
-
-    public long getmCurrentId(){
-        return mCurrentId;
-    }
-
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId){
 
         Log.d("SERVICE","onStartCommand");
+
+        if(isPlaying()){
+            Log.d("onBind()","플레잉 중이면 인텐트보내자");
+            sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
+        }
 
         if (intent != null) {
             String action = intent.getAction();
@@ -252,8 +264,16 @@ public class AudioService extends Service {
                 forward();
             } else if (CommandActions.CLOSE.equals(action)) {
                 pause();
+                Log.d("SERVICE","APP CLOSING!!!!!!!!!");
+                Log.d("SERVICE","NOTI REMOVE!!!!!!!!!");
                 removeNotificationPlayer();
+                Log.d("SERVICE","MP RELEASE!!!!!!!!!");
+                Log.d("SERVICE","DIE!!!!!!!!!");
+                mMediaPlayer.release();
+                stopSelf();
+                return START_NOT_STICKY;
             }
+
         }
 
         return super.onStartCommand(intent, flags, startId);
@@ -296,7 +316,7 @@ public class AudioService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.d("AudioService- onBind","return SERVICE BINDER()"+intent.toString());
-//        this.startService(new Intent(this, AudioService.class));
+
         return mBinder;
     }
 
@@ -377,7 +397,7 @@ public class AudioService extends Service {
         if (isPrepared) {
             mMediaPlayer.start();
             sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
-//            updateNotificationPlayer();
+            updateNotificationPlayer();
             Log.d("SERVICE-play","PLAY_STATE_CHANGED 인텐트 전송");
         }
     }
@@ -386,7 +406,7 @@ public class AudioService extends Service {
         if (isPrepared) {
             mMediaPlayer.pause();
             sendBroadcast(new Intent(BroadcastActions.PLAY_STATE_CHANGED));
-//            updateNotificationPlayer();
+            updateNotificationPlayer();
             Log.d("SERVICE-pause","PLAY_STATE_CHANGED 인텐트 전송");
         }
     }
