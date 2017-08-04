@@ -37,25 +37,13 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
 
     private ArrayList<Long> AudioIds;
     private final Uri artworkUri = Uri.parse("content://media/external/audio/albumart");
-
-
     private final OnStartDragListener mDragStartListener;
     private final OnCustomerListChangedListener mListChangedListener;
-
     public BroadcastReceiver mBCReceiver;
     public IntentFilter filter;
     public IntentFilter filter2;
-
     public  AudioServiceInterface mInterface;
-
-    //현재 서비스에 올라있는 애
-    private int nowPosition;
-    //서비스에 올라있는애의 재생 중인지 여부
-    private boolean playing;
-
-    //이거 없어도됌
     Context mContext;
-
     Realm realm;
 
 
@@ -80,13 +68,11 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
 
                     int positionGottenByService = mInterface.getmCurrentPosition();
                     int positionHasBeingGottenByService = mInterface.getmPastPosition();
-                    Log.d("onReceive",BroadcastActions.PREPARED + " Curr position : " +positionGottenByService + " Past position : " +positionHasBeingGottenByService);
                     notifyItemChanged(positionGottenByService);
                     notifyItemChanged(positionHasBeingGottenByService);
                 }
                 if(action.equals(BroadcastActions.PLAY_STATE_CHANGED)){
                     int positionGottenByService = mInterface.getmCurrentPosition();
-                    Log.d("onReceive",BroadcastActions.PREPARED + " Curr position : " +positionGottenByService);
                     notifyItemChanged(positionGottenByService);
                 }
             }
@@ -106,7 +92,6 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
 
     @Override
     public ItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Log.d("onCreateViewHolder", "Check");
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.playlist_item, parent, false);
         ItemViewHolder holder = new ItemViewHolder(v);
 
@@ -138,22 +123,12 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
             holder.PLArtisttName.setTextColor(Color.BLACK);
         }
 
-
-
-        Log.d("onBindViewHolder POSITION", position + "");
-        Log.d("onBindViewHolder TITLE", selectedItem.getmTitle() + "");
-        Log.d("onBindViewHolder INDEX", selectedItem.getmIndex() + "");
         //리스너 구현 -- 드래그
         holder.PLDragButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-
                 if (MotionEventCompat.getActionMasked(event) == MotionEvent.ACTION_DOWN) {
                     mDragStartListener.onStartDrag(holder);
-                    Log.e("action down", "ation down");
-                }
-                if (MotionEventCompat.getActionMasked(event) == MotionEvent.ACTION_UP) {
-                    Log.e("action up", "ation up");
                 }
                 return false;
             }
@@ -161,7 +136,6 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
 
         holder.PlayMusicByTitle.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
-                Log.d("Let's Play music!! the posion is :::::", holder.getAdapterPosition()+"");
                 mInterface.play(position);
             }
         });
@@ -172,9 +146,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
             @Override
             public void onClick(View v) {
                 PopupMenu libPopUp = new PopupMenu(mContext, v);
-
                 libPopUp.getMenuInflater().inflate(R.menu.playlist_popup, libPopUp.getMenu());
-
                 libPopUp.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(final MenuItem item) {
@@ -185,15 +157,6 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                                 if(mInterface.getmCurrentPosition() == position){
                                     //현재 재생중인 노래가 있다면
                                     //순차 재생 다음노래 틀고
-                                    if (AudioIds.size() - 1 > position) {
-                                        // 다음 포지션으로 이동.
-                                        nextPos = position+1;
-                                        mInterface.play(nextPos);
-                                    } else {
-                                        // 처음 포지션으로 이동.
-                                        nextPos = 0;
-                                        mInterface.play(nextPos);
-                                    }
 
                                     //램디에서 삭제
                                     final Realm realm;
@@ -201,17 +164,19 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                                     realm.executeTransaction(new Realm.Transaction() {
                                         @Override
                                         public void execute(Realm realm) {
-                                            Log.d("holder.optionButton.", "삭제될 아이템의 포지션 : " + position);
-                                            Log.d("holder.optionButton.", "삭제될 아이템의 어댑터의 포지션 : " + holder.getAdapterPosition());
-                                            Log.d("holder.optionButton.", "삭제될 아이템의 인덱스 : " + selectedItem.getmIndex());
                                             selectedItem.deleteFromRealm();
-                                            //서비스의 아이디 목록 최신화
-                                            Log.d("아이템 삭제", "서비스 리스트 최신화");
-
                                             mInterface.getmAudioIds().remove(position);
                                         }
                                     });
-
+                                    if (AudioIds.size() - 1 > position) {
+                                        // 다음 포지션으로 이동.
+                                        nextPos = position;
+                                        mInterface.play(nextPos);
+                                    } else {
+                                        // 처음 포지션으로 이동.
+                                        nextPos = 0;
+                                        mInterface.play(nextPos);
+                                    }
                                     //서비스의 현재 포지션 조정
                                     if(nextPos == 0){
                                         mInterface.setmCurrentPosition(0);
@@ -219,7 +184,7 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                                     }
                                     else{
                                         mInterface.setmCurrentPosition(nextPos);
-                                        notifyDataSetChanged();
+                                        notifyItemChanged(position);
                                     }
                                 }
                                 else{
@@ -230,21 +195,13 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
                                     realm.executeTransaction(new Realm.Transaction() {
                                         @Override
                                         public void execute(Realm realm) {
-                                            Log.d("holder.optionButton.", "삭제될 아이템의 포지션 : " + position);
-                                            Log.d("holder.optionButton.", "삭제될 아이템의 어댑터의 포지션 : " + holder.getAdapterPosition());
-                                            Log.d("holder.optionButton.", "삭제될 아이템의 인덱스 : " + selectedItem.getmIndex());
                                             selectedItem.deleteFromRealm();
                                             //서비스의 아이디 목록 최신화
-                                            Log.d("아이템 삭제", "서비스 리스트 최신화");
-
                                             mInterface.getmAudioIds().remove(position);
-
                                             notifyDataSetChanged();
                                         }
                                     });
                                 }
-
-
                                 break;
 
                             case R.id.music_delete:
@@ -294,17 +251,12 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
         notifyItemMoved(fromPosition, toPosition);
         notifyItemChanged(fromPosition);
         notifyItemChanged(toPosition);
-
-        //서비스의 아이디 목록 최신화
-        Log.d("아이템 드래그", "서비스 리스트 최신화");
-
     }
 
 
 
 
     public static class ItemViewHolder extends RecyclerView.ViewHolder implements ItemTouchHelperViewHolder {
-
         //버튼 선언
         //public final Button PLOptionButton;
         public final Button PLDragButton;
@@ -323,22 +275,12 @@ public class RealmAdapter extends RecyclerView.Adapter<RealmAdapter.ItemViewHold
             PLDragButton = (Button) v.findViewById(R.id.PL_drag);
             optionButton = (Button) itemView.findViewById(R.id.playlist_option);
             PlayMusicByTitle = (LinearLayout) v.findViewById(R.id.playlist_play_music);
-
         }
-
+        
+        @Override
+        public void onItemSelected() {}
 
         @Override
-        public void onItemSelected() {
-
-        }
-
-        @Override
-        public void onItemClear() {
-
-        }
-
-
+        public void onItemClear() {}
     }
-
-
 }

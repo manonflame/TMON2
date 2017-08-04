@@ -62,17 +62,11 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
     private final static int LOADER_ID = 0x001;
     public static final String TAG = "mTag";
     private Menu menu;
-
-
     boolean CardViewState = true;
-
     Realm realm;
     private RealmQuery<AudioItem> query;
     private RealmResults<AudioItem> results;
-
     int rIndex;
-
-
     LoadMusic loadMusic;
 
     //서치메뉴
@@ -123,18 +117,13 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
     //렘디비어댑터
     private RealmAdapter rAdapter;
     private ItemTouchHelper mItemTouchHelper;
-
-
-
-    int WhereCurPosIs = -1;
-
-
     SharedPreferences pref;
 
 
 
     //셔플 여부
     boolean isShuffle = false;
+    boolean isRepeat = false;
 
 
 
@@ -176,10 +165,10 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
 
         mInterface = new AudioServiceInterface(this);
-        Log.d("onCreate() startService ","startService");
+
         startService(new Intent(this, AudioService.class));
-        Log.d("AudioServiceInterface","인텐트");
-        this.bindService(new Intent(this, AudioService.class).setPackage(this.getPackageName()), mInterface.getmServiceConnection(), Context.BIND_AUTO_CREATE);
+        Log.d("onCreate() bindService ","bindService");
+        bindService(new Intent(this, AudioService.class), mInterface.getmServiceConnection(), Context.BIND_AUTO_CREATE);
 
 
         //미디어 스토어 권한체크
@@ -202,11 +191,15 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
             entireList = list;
         }
 
-        Log.d("권한체크","권한이고 뭐고 진행");
+
+
+        //셔플 여부 프리퍼런스로 받음
         pref = PreferenceManager.getDefaultSharedPreferences(this);
         isShuffle = pref.getBoolean("SHUFFLE", false);
+        isRepeat = pref.getBoolean("REPEAT", false);
 
         Log.d("onCreate의 isShuffle : ", ""+isShuffle);
+        Log.d("onCreate의 isRepeat : ", ""+isRepeat);
 
 
 
@@ -215,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         Button.OnClickListener onClickListener = new Button.OnClickListener(){
             @Override
             public void onClick(View view){
+                SharedPreferences.Editor editor = pref.edit();
                 switch(view.getId()){
                     case R.id.go_to_list :
                         Log.d("onClick","재생목록 보여주기 or 끄기");
@@ -238,7 +232,27 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
                     case R.id.slide_up_repeat:
                         Log.d("onClick","반복");
-                        mInterface.toggleRepeat();
+
+                        if(isRepeat){
+                            //반복 해제로
+                            Log.d("onClick","반복 -> 진행");
+                            isRepeat = false;
+                            slideUpRepeat.setBackgroundResource(R.mipmap.ic_repeat_off);
+                            //서비스 상태를 repeat해제
+                            editor.putBoolean("REPEAT",false);
+                            editor.commit();
+                            mInterface.setREPEAT(isRepeat);
+                        }
+                        else{
+                            //반복으로
+                            Log.d("onClick","진행 -> 반복");
+                            isRepeat = true;
+                            slideUpRepeat.setBackgroundResource(R.mipmap.ic_repeat_on);
+                            editor.putBoolean("REPEAT",true);
+                            editor.commit();
+                            mInterface.setREPEAT(isRepeat);
+                        }
+
                         break;
 
                     case R.id.slide_play:
@@ -248,7 +262,6 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
 
                     case R.id.slide_up_shuffle:
                         Log.d("onClick","셔플");
-                        SharedPreferences.Editor editor = pref.edit();
                         if(isShuffle){
                             //순차재생으로
                             Log.d("onClick","교차 -> 순차");
@@ -277,10 +290,6 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                             }
                             //서비스 ids변경
                             mInterface.setPlayList(newAudioIds);
-
-
-
-
                         }
                         else{
                             //교차재생으로
@@ -337,20 +346,16 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                                 editor.putString("TheLastShuffleList", null);
                             }
 
-
                             //포지션하고 아이디도 저장해야함 ******
                             editor.putLong("TheLastId", mInterface.getAudioItem().getmId());
                             editor.putInt("TheLastPosition", mInterface.getmCurrentPosition());
                             editor.apply();
-
-
-
-
                         }
                         break;
                 }
             }
         };
+
 
 
         //슬라이드업에 따른 레이아웃과 버튼들 연결
@@ -379,6 +384,13 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
             slideUpShuffle.setBackgroundResource(R.mipmap.ic_shuffle_off);
         }
 
+        if(isRepeat){
+            slideUpRepeat.setBackgroundResource(R.mipmap.ic_repeat_on);
+        }
+        else{
+            slideUpRepeat.setBackgroundResource(R.mipmap.ic_repeat_off);
+        }
+
         slideUpAlbumArt = (ImageView) findViewById(R.id.slide_up_albumart);
         slideAlbumArt = (ImageView) findViewById(R.id.slide_albumart);
         slideUpSeekBar = (SeekBar) findViewById(R.id.slide_up_seekbar);
@@ -403,17 +415,6 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         PLlayoutManager = new LinearLayoutManager(this);
         playlistVeiw.setLayoutManager(PLlayoutManager);
 
-
-
-        //재생목록의 리사이클러뷰 비저블러티 설정 및 어댑터 연결
-        //램 초기화
-        Realm.init(this);
-        RealmConfiguration realmConfiguration = new RealmConfiguration.Builder().build();
-        Realm.setDefaultConfiguration(realmConfiguration);
-        realm = Realm.getDefaultInstance();
-
-
-
         slideUpSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -432,6 +433,22 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
+
+
+        //재생목록의 리사이클러뷰 비저블러티 설정 및 어댑터 연결
+        //램 초기화
+        Realm.init(this);
+        RealmConfiguration realmConfiguration = new RealmConfiguration.Builder().build();
+        Realm.setDefaultConfiguration(realmConfiguration);
+        realm = Realm.getDefaultInstance();
+        //쿼리를 받아옴
+        query = realm.where(AudioItem.class);
+        results = query.findAll();
+        mAdapter.setmDataset(results);
+        rIndex = results.size();
+
+        Log.d("realmRecyclerSetting()'s realmSize", String.valueOf(rIndex));
+
 
 
 
@@ -486,6 +503,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
+                Log.d("MAIN BROADCAST RECEIVER", "현재 받은 인텐트는 "+action + "입니다");
                 AudioItem nowPlayingItem = mInterface.getAudioItem();
                 Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, nowPlayingItem.getmAlbumId());
 
@@ -513,7 +531,7 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
                 new MyThread().start();
 
 
-                Log.d("MAIN BROADCAST RECEIVER", "현재 받은 인텐트는 "+action + "입니다");
+
                 if(mInterface.isPlaying()){
                     Log.d("MAIN BROADCAST RECEIVER", "재생 중이라 아이콘 바꿈");
                     slidePlay.setBackgroundResource(R.mipmap.ic_pause);
@@ -568,13 +586,6 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
             slidePlay.setBackgroundResource(R.mipmap.ic_pause);
             slideUpPlay.setBackgroundResource(R.mipmap.ic_pause_circle);
         }
-        else{
-            Log.d("MAIN CREATE", "서비스 실행중이 아닌듯");
-//            Log.d("MAIN CREATE 실행중이 아닌 듯", mInterface.getAudioItem().getmTitle());
-        }
-
-
-
     }
 
 
@@ -607,17 +618,6 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         }
     }
 
-    void realmRecyclerSetting() {
-        //쿼리를 받아옴
-        query = realm.where(AudioItem.class);
-        results = query.findAll();
-        mAdapter.setmDataset(results);
-        rIndex = results.size();
-
-        Log.d("realmRecyclerSetting()'s realmSize", String.valueOf(rIndex));
-
-    }
-
     void makeRealmAdapter(){
         rAdapter = new RealmAdapter(this, this, this, mInterface);
         ItemTouchHelper.Callback callback = new SimpleItemTouchHelperCallback(rAdapter);
@@ -626,23 +626,6 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         playlistVeiw.setAdapter(rAdapter);
     }
 
-
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if(realm.getDefaultInstance() != null) {
-            realm.close();
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        realm = Realm.getDefaultInstance();
-        realmRecyclerSetting();
-        Log.d("onResume()","END");
-    }
 
     //메뉴바 관련 함수들
     @Override
@@ -802,27 +785,32 @@ public class MainActivity extends AppCompatActivity implements OnCustomerListCha
         //create a List of Long to hold the Ids of the
         //Customers in the List
         List<Long> listOfSortedAudioItemId = new ArrayList<Long>();
-
         for (AudioItem audioItem: realmDataSets){
             listOfSortedAudioItemId.add(audioItem.getmId());
         }
-
-        Log.d("onNoteListChanged()", "enteringCheck");
-
     }
 
     @Override
     public void onStartDrag(RecyclerView.ViewHolder viewHolder) {
-
         mItemTouchHelper.startDrag(viewHolder);
     }
 
 
     @Override
     protected void onDestroy(){
-        Log.d("MAIN ONDESTROY","START DESTROY");
         unregisterReceiver(mBCReceiver);
-        this.unbindService(mInterface.getmServiceConnection());
+        if(realm.getDefaultInstance() != null) {
+            realm.close();
+        }
+        if(mInterface.isPlaying()){
+            this.unbindService(mInterface.getmServiceConnection());
+        }
+        else{
+            this.stopService(new Intent(this, AudioService.class));
+        }
+
+
+
         super.onDestroy();
     }
 

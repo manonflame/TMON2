@@ -4,7 +4,10 @@ package com.example.kyungjunmin.tmon;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.database.Cursor;
+import android.media.MediaPlayer;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -32,21 +35,14 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
 
     Realm realm;
     private RealmResults<AudioItem> mDataset;
-
     Context context;
     private final Uri artworkUri = Uri.parse("content://media/external/audio/albumart");
     private List<AudioItem> albumList;
     public int viewType;
-
-
     private RealmQuery<AudioItem> query;
     private RealmResults<AudioItem> results;
-
     int nextIndex;
-
     public  AudioServiceInterface mInterface;
-    IntentFilter filter;
-
 
     public myAdapter(List<AudioItem> items , int viewType, Context context, AudioServiceInterface mInterface){
         Log.e("MY ADAPTER : onCreateViewHolder","MYADAPTER CONSTRUCTOR");
@@ -83,10 +79,6 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
         else {
             v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.listitem_audio, viewGroup, false);
         }
-
-
-
-
         //마지막 인덱스 받기
         if(realm.isEmpty()){
             //마지막 인덱스가 비었다면
@@ -106,33 +98,22 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
      * @param position
      */
     @Override
-    public void onBindViewHolder(ViewHolder viewHolder, int position) {
+    public void onBindViewHolder(ViewHolder viewHolder, final int position) {
 
         final AudioItem myItem = albumList.get(position);
         viewHolder.MusicTitle.setText(myItem.getmTitle());
         viewHolder.ArtisttName.setText(myItem.getmArtist());
-        Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, myItem.getmAlbumId());
+        final Uri albumArtUrl = ContentUris.withAppendedId(artworkUri, myItem.getmAlbumId());
         Picasso.with(viewHolder.itemView.getContext()).load(albumArtUrl).error(R.mipmap.ic_empty_albumart).into(viewHolder.img);
-        Log.d("MYADAPTER ONBINDVIEWHOLDER",myItem.getmTitle());
-        //로그용**
+
         final long mId = myItem.getmId();
-        final long mAlbumId = myItem.getmAlbumId();
-        final String mTitle = myItem.getmTitle();
-        final String mArtist = myItem.getmArtist();
-        final String mAlbum = myItem.getmAlbum();
-        final long mDuration = myItem.getmDuration();
-        final String mDataPath = myItem.getmDataPath();
-        //로그용**
 
         //버튼 클릭 이벤트
         viewHolder.optionButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                Log.d("버튼","압싄 버튼이 눌렸습니다");
                 PopupMenu libPopUp=new PopupMenu(context, v);
-
                 libPopUp.getMenuInflater().inflate(R.menu.lib_popup, libPopUp.getMenu());
-
                 libPopUp.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
@@ -145,19 +126,6 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
                                 if(existanceChecker == null){
                                     //없으면 추가함
                                     //램디비에 추가하면됨
-                                    //로그용**
-                                    Log.d("libMenuClick","램디비에 추가하면됨");
-                                    Log.d("item - INDEX", String.valueOf(nextIndex));
-                                    Log.d("item - mId", String.valueOf(mId));
-                                    Log.d("item - mAlbumId",String.valueOf(mAlbumId));
-                                    Log.d("item - mTitle",mTitle);
-                                    Log.d("item - mArtist",mArtist);
-                                    Log.d("item - mAlbum",mAlbum);
-                                    Log.d("item - mDuration",String.valueOf(mDuration));
-                                    Log.d("item - mDataPath",mDataPath);
-                                    //로그용**
-
-
                                     final AudioItem newItem = new AudioItem();
                                     newItem.setmIndex(nextIndex);
                                     nextIndex++;
@@ -175,12 +143,6 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
                                             realm.copyToRealmOrUpdate(newItem);
                                         }
                                     });
-
-                                    Log.d("아이템 추가", "서비스 리스트 최신화");
-                                    //서비스 리스트에 아이디 추가
-                                    if(mInterface==null){
-                                        Log.d("mAdapter","null");
-                                    }
                                     mInterface.addPlayList(mId);
                                     break;
                                 }
@@ -192,6 +154,11 @@ public class myAdapter extends RecyclerView.Adapter<myAdapter.ViewHolder>{
                             case R.id.lib_del:
                                 //라이브러리 목록에서 삭제하면 됨
                                 Log.d("libMenuClick","라이브러리 목록에서 삭제하면 됨");
+//
+//                                Uri uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mId);
+//                                context.getContentResolver().delete(uri, null, null);
+//                                notifyItemRemoved(position);
+
                                 break;
                         }
                         return true;

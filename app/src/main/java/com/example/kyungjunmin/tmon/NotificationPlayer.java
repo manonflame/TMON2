@@ -32,7 +32,6 @@ public class NotificationPlayer {
 
 
     public NotificationPlayer(AudioService service) {
-        Log.i("NotificationPlayer", "NotificationPlayer()");
         mService = service;
         mNotificationManager = (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
         updateNotificationPlayer();
@@ -41,38 +40,31 @@ public class NotificationPlayer {
 
 
     public void updateNotificationPlayer() {
-        Log.i("NotificationPlayer", "updateNotificationPlayer()");
-
         cancel();
         mNotificationManagerBuilder = new NotificationManagerBuilder();
         mNotificationManagerBuilder.execute();
     }
 
     public void removeNotificationPlayer() {
-        Log.i("NotificationPlayer", "removeNotificationPlayer()");
         cancel();
         mService.stopForeground(true);
         isForeground = false;
     }
 
     private void cancel() {
-        Log.i("NotificationPlayer", "cancel()");
-
         if (mNotificationManagerBuilder != null) {
             mNotificationManagerBuilder.cancel(true);
             mNotificationManagerBuilder = null;
         }
     }
 
-    private class NotificationManagerBuilder extends AsyncTask<Void, Void, Notification> {
+     private class NotificationManagerBuilder extends AsyncTask<Void, Void, Notification> {
         private RemoteViews mRemoteViews;
         private NotificationCompat.Builder mNotificationBuilder;
         private PendingIntent mMainPendingIntent;
 
         @Override
         protected void onPreExecute() {
-            Log.i("NotificationPlayer", "onPreExecute()");
-
             super.onPreExecute();
             Intent mainActivity = new Intent(mService, MainActivity.class);
             mMainPendingIntent = PendingIntent.getActivity(mService, 0, mainActivity, 0);
@@ -103,8 +95,6 @@ public class NotificationPlayer {
 
         @Override
         protected Notification doInBackground(Void... params) {
-            Log.i("NotificationPlayer", "doInBackground()");
-
             mNotificationBuilder.setContent(mRemoteViews);
             mNotificationBuilder.setContentIntent(mMainPendingIntent);
             mNotificationBuilder.setPriority(Notification.PRIORITY_MAX);
@@ -115,16 +105,11 @@ public class NotificationPlayer {
 
         @Override
         protected void onPostExecute(Notification notification) {
-
-
             super.onPostExecute(notification);
-
             if (!mService.isPlaying()) {
                 isForeground = false;
                 mService.stopForeground(false);
             }
-
-
             try {
                 mNotificationManager.notify(NOTIFICATION_PLAYER_ID, notification);
             } catch (Exception e) {
@@ -153,9 +138,6 @@ public class NotificationPlayer {
 
         private void updateRemoteView(final RemoteViews remoteViews, final Notification notification) {
             Log.i("NotificationPlayer", "updateRemoteView()");
-
-
-
             if (mService.isPlaying()) {
                 remoteViews.setImageViewResource(R.id.notification_play, R.mipmap.ic_pause);
                 mService.startForeground(NOTIFICATION_PLAYER_ID, notification);
@@ -168,9 +150,6 @@ public class NotificationPlayer {
             realm = Realm.getDefaultInstance();
             AudioItem musicItem = realm.where(AudioItem.class).equalTo("mId", mService.getmCurrentId()).findFirst();
 
-            Log.i("NotificationPlayer", "updateRemoteView() 의 아이템의 타이틀 "+ musicItem.getmTitle());
-
-
             if (musicItem == null)
                 return;
             String title = musicItem.getmTitle();
@@ -182,7 +161,6 @@ public class NotificationPlayer {
             uiHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    Log.i("NotificationPlayer", "updateRemoteView() run()");
                     Picasso.with(mService)
                             .load(albumArtUri)
                             .error(R.mipmap.ic_empty_albumart)

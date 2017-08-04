@@ -34,9 +34,6 @@ public class AudioServiceInterface {
             }
         };
     }
-    public AudioService getmService(){
-        return mService;
-    }
 
     public ServiceConnection getmServiceConnection(){
         return mServiceConnection;
@@ -78,6 +75,20 @@ public class AudioServiceInterface {
         }
         return mService.getSHUFFLE();
     }
+
+    public void setREPEAT(boolean toggle){
+        if (mService != null) {
+            mService.setREPEAT(toggle);
+        }
+    }
+
+    public boolean getREPEAT(){
+        if(mService ==null){
+            Log.e("mService getSHUFFLE","mService is NULL");
+        }
+        return mService.getREPEAT();
+    }
+
 
 
     public void setPlayList(ArrayList<Long> audioIds) {
@@ -149,12 +160,6 @@ public class AudioServiceInterface {
         }
     }
 
-    public void changePosition(int fromPosition, int toPosition){
-        if(mService != null){
-            mService.changePosition(fromPosition,toPosition);
-        }
-    }
-
     public int getmCurrentPosition(){
         if(mService != null){
             return mService.getmCurrentPosition();
@@ -175,17 +180,6 @@ public class AudioServiceInterface {
         }
     }
 
-    public void toggleShuffle(){
-        if(mService != null){
-            mService.toggleShuffle();
-        }
-    }
-
-    public void toggleRepeat(){
-        if(mService != null){
-            mService.toggleRepeat();
-        }
-    }
 
     public void setmCurrentPosition(int i)
     {
